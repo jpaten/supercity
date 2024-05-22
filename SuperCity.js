@@ -14,15 +14,21 @@ export class SuperCity extends Scene {
         this.shapes = {
             square: new defs.Square(3),
             cylinder: new defs.Capped_Cylinder(50,50),
-            cube: new defs.Cube()
+            cube: new defs.Cube(),
+            triangle: new defs.Triangle()
+
             // TODO:  Fill in as many additional shape instances as needed in this key/value table.
             //        (Requirement 1)
         };
+
 
         // *** Materials
         this.materials = {
             planet1: new Material(new defs.Phong_Shader(),
                 {color: hex_color("#969696"), ambient: 0, specularity: 0, diffusivity: 1}),
+            house: new Material(new defs.Phong_Shader(),
+                {color: hex_color("#FFC0CB"), ambient: 0.5, specularity: 0.5, diffusivity: 0.5}),
+
             tower_blue: new Material(new defs.Phong_Shader(),
                 {color: hex_color("#5576a9"), ambient: 0.2, specularity: 0, diffusivity: 0.1}),
             tower_window: new Material(new defs.Phong_Shader(),
@@ -47,6 +53,32 @@ export class SuperCity extends Scene {
         this.key_triggered_button("Attach to planet 4", ["Control", "4"], () => this.attached = () => this.planet_4);
         this.new_line();
         this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
+    }
+    draw_house(context, program_state, x, y, color)
+    {
+        let model_transform = Mat4.identity().times(Mat4.translation(0,0,-1))
+        let new_model_transform = model_transform;
+        this.shapes.cube.draw(context, program_state, model_transform, this.materials.house.override({color:color}));
+        model_transform = Mat4.rotation(Math.PI/6, 0, -1, 0).times(model_transform);
+        model_transform = Mat4.translation(-1.35, 0, 1.15).times(model_transform);
+        model_transform = Mat4.scale(0.75,1,1.2).times(model_transform);
+        const blk = vec4(0, 0, 0, 1);
+        color = color.mix(blk,0.5)
+        this.shapes.square.draw(context, program_state, model_transform, this.materials.house.override({color:color}));
+        model_transform = new_model_transform;
+        model_transform = Mat4.rotation( Math.PI/6, 0, 1, 0).times(model_transform);
+        model_transform = Mat4.translation(1.35, 0, 1.15).times(model_transform);
+        model_transform = Mat4.scale(0.75,1,1.2).times(model_transform);
+        this.shapes.square.draw(context, program_state, model_transform, this.materials.house.override({color:color}));
+        model_transform = new_model_transform
+        model_transform = Mat4.rotation( 3*(Math.PI/2), 1, 0, 0).times(model_transform)
+        model_transform = Mat4.rotation( (Math.PI/4), 0, 1, 0).times(model_transform)
+        model_transform = Mat4.scale(1.5,1.5,1.5).times(model_transform);
+        model_transform = Mat4.translation(0, 0.5, 1).times(model_transform);
+        this.shapes.triangle.draw(context, program_state, model_transform, this.materials.house.override({color:color}));
+        model_transform = Mat4.translation(0, 2, 0).times(model_transform);
+        this.shapes.triangle.draw(context, program_state, model_transform, this.materials.house.override({color:color}));
+
     }
 
     display(context, program_state) {
@@ -91,6 +123,7 @@ export class SuperCity extends Scene {
             Math.PI / 4, context.width / context.height, .1, 1000);
 
 
+
         if (this.attached != null && this.attached() != null) {
             const desired_camera_matrix = Mat4.inverse(
                 this.attached().times(
@@ -105,9 +138,15 @@ export class SuperCity extends Scene {
                 (x, i) => Vector.from(program_state.camera_inverse[i]).mix(x, 0.1)
             ))
         }
-
-
+        let x = 0
+        let y = 0
         program_state.lights = [new Light(vec4(-6, -6, 20, 1), color(1,1,1), 10000)];
+
+        //for houses
+        const pink = hex_color("#FFC0CB")
+        this.draw_house(context, program_state, x,y, pink)
+
+
 
         this.shapes.square.draw(context, program_state, Mat4.identity().times(Mat4.translation(0,0,-2)).times(Mat4.scale(20,20,20)), this.materials.planet1)
         this.shapes.square.draw(context, program_state, Mat4.identity().times(Mat4.translation(-2,-2,-1.9)).times(Mat4.scale(0.25,0.25,0.25)), this.materials.planet1.override({color:hex_color("#FF0000")}))
