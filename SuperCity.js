@@ -35,7 +35,7 @@ export class SuperCity extends Scene {
             door: new Material(new defs.Textured_Phong(),
                 {color: hex_color("#000000"), texture: new Texture("./assets/door.png"), ambient:1}),
             selected_square: new Material(new defs.Phong_Shader(),
-                {color: hex_color("#f8e7d5"), ambient: 0.5, specularity: 0, diffusivity: 0.5}),
+                {color: hex_color("#64f63f"), ambient: 0.5, specularity: 0, diffusivity: 0.5}),
             ground_texture: new Material(new defs.Textured_Phong(),
                 {color: hex_color("#000000"), texture: new Texture("./assets/ground.png"), ambient: 1})
         }
