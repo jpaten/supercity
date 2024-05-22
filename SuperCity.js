@@ -4,7 +4,6 @@ const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture
 } = tiny;
 
-
 export class SuperCity extends Scene {
     constructor() {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
@@ -21,14 +20,12 @@ export class SuperCity extends Scene {
             //        (Requirement 1)
         };
 
-
         // *** Materials
         this.materials = {
             planet1: new Material(new defs.Phong_Shader(),
                 {color: hex_color("#969696"), ambient: 0, specularity: 0, diffusivity: 1}),
             house: new Material(new defs.Phong_Shader(),
                 {color: hex_color("#FFC0CB"), ambient: 0.5, specularity: 0.5, diffusivity: 0.5}),
-
             tower_blue: new Material(new defs.Phong_Shader(),
                 {color: hex_color("#5576a9"), ambient: 0.2, specularity: 0, diffusivity: 0.1}),
             tower_window: new Material(new defs.Phong_Shader(),
@@ -37,24 +34,23 @@ export class SuperCity extends Scene {
                 {color: hex_color("#000000"), texture: new Texture("./assets/helipad.png"), ambient: 1}),
             door: new Material(new defs.Textured_Phong(),
                 {color: hex_color("#000000"), texture: new Texture("./assets/door.png"), ambient:1}),
+            selected_square: new Material(new defs.Phong_Shader(),
+                {color: hex_color("#f8e7d5"), ambient: 0.5, specularity: 0, diffusivity: 0.5}),
             ground_texture: new Material(new defs.Textured_Phong(),
                 {color: hex_color("#000000"), texture: new Texture("./assets/ground.png"), ambient: 1})
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, -3, 5), vec3(0,0, 0), vec3(0, 1, 0));
+        this.selection = [0,1]
     }
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-        this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => null);
+        this.key_triggered_button("Select up", ["ArrowUp"], () => this.selection[1]++);
+        this.key_triggered_button("Select down", ["ArrowDown"], () => this.selection[1]--);
         this.new_line();
-        this.key_triggered_button("Attach to planet 1", ["Control", "1"], () => this.attached = () => this.planet_1);
-        this.key_triggered_button("Attach to planet 2", ["Control", "2"], () => this.attached = () => this.planet_2);
-        this.new_line();
-        this.key_triggered_button("Attach to planet 3", ["Control", "3"], () => this.attached = () => this.planet_3);
-        this.key_triggered_button("Attach to planet 4", ["Control", "4"], () => this.attached = () => this.planet_4);
-        this.new_line();
-        this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
+        this.key_triggered_button("Select left", ["ArrowLeft"], () => this.selection[0]--);
+        this.key_triggered_button("Select right", ["ArrowRight"], () => this.selection[0]++);
     }
     draw_house(context, program_state, x, y, color)
     {
@@ -121,6 +117,19 @@ export class SuperCity extends Scene {
                 this.materials.door
             )
         }
+
+        const draw_selected_tile = (selected) => {
+            this.shapes.square.draw(
+                context, program_state,
+                Mat4.identity().times(
+                    Mat4.translation(selected[0]*4,selected[1]*4,-1.9)
+                ).times(
+                    Mat4.scale(2,2,0)
+                ),
+                this.materials.selected_square
+            )
+        }
+
         // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
         if (!context.scratchpad.controls) {
@@ -131,7 +140,6 @@ export class SuperCity extends Scene {
 
         program_state.projection_transform = Mat4.perspective(
             Math.PI / 4, context.width / context.height, .1, 1000);
-
 
 
         if (this.attached != null && this.attached() != null) {
@@ -161,7 +169,7 @@ export class SuperCity extends Scene {
         this.shapes.square.draw(context, program_state, Mat4.identity().times(Mat4.translation(0,0,-2)).times(Mat4.scale(20,20,20)), this.materials.planet1)
         this.shapes.square.draw(context, program_state, Mat4.identity().times(Mat4.translation(-2,-2,-1.9)).times(Mat4.scale(0.25,0.25,0.25)), this.materials.planet1.override({color:hex_color("#FF0000")}))
         this.shapes.square.draw(context, program_state, Mat4.identity().times(Mat4.translation(2,2,-1.9)).times(Mat4.scale(0.25,0.25,0.25)), this.materials.planet1.override({color:hex_color("#00FFFF")}))
-
+        draw_selected_tile(this.selection)
         draw_tower(context, program_state, 0,0)
 
 
