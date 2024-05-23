@@ -5,7 +5,7 @@ const {
 } = tiny;
 
 const BASE_Z = -2
-
+const compare_coords = (a,b) => (a[0] === b[0]) && (a[1] === b[1])
 
 export class SuperCity extends Scene {
     constructor() {
@@ -45,8 +45,21 @@ export class SuperCity extends Scene {
 
         this.initial_camera_location = Mat4.look_at(vec3(0, -3, 5), vec3(0,0, 0), vec3(0, 1, 0));
         this.selection = [0,1];
+        this.towers = [[2,2], [1,1], [-1,-1]];
     }
 
+    add_tower(x, y) {
+        for (let i = 0; i < this.towers.length; i++) {
+            if (compare_coords(this.towers[i], [x,y])) {
+                return;
+            }
+        }
+        this.towers.push([x,y]);
+    }
+    remove_tower(x,y) {
+        this.towers = this.towers.filter((i) => (i[0] !== x) || (i[1] !== y));
+        return this.towers;
+    }
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
@@ -55,6 +68,9 @@ export class SuperCity extends Scene {
         this.new_line();
         this.key_triggered_button("Select left", ["ArrowLeft"], () => this.selection[0]--);
         this.key_triggered_button("Select right", ["ArrowRight"], () => this.selection[0]++);
+        this.new_line();
+        this.key_triggered_button("Demolish", ["e"], () => this.remove_tower(this.selection[0], this.selection[1]));
+        this.key_triggered_button("Build tower", ["t"], () => this.add_tower(this.selection[0], this.selection[1]));
     }
     draw_house(context, program_state, x, y, color)
     {
@@ -109,17 +125,17 @@ export class SuperCity extends Scene {
                 context, program_state,
                 Mat4.identity().times(Mat4.translation(x,y,4.62)).times(Mat4.scale(1.2,1.2,0)),
                 this.materials.helipad_texture
-            )
+            );
             this.shapes.cube.draw(
                 context, program_state,
                 Mat4.identity().times(Mat4.translation(x,y,-1.9)).times(Mat4.scale(1.5,1.5,1.5)),
                 this.materials.tower_blue
-            )
+            );
             this.shapes.square.draw(
                 context, program_state,
                 Mat4.identity().times(Mat4.translation(x,y-1.51,-1.5)).times(Mat4.scale(0.5,0.5,0.5)).times(Mat4.rotation(Math.PI / 2.0, -1,0,0)),
                 this.materials.door
-            )
+            );
         }
 
         const draw_selected_tile = (selected) => {
@@ -131,7 +147,7 @@ export class SuperCity extends Scene {
                     Mat4.scale(2,2,0)
                 ),
                 this.materials.selected_square
-            )
+            );
         }
 
         // display():  Called once per frame of animation.
@@ -174,7 +190,9 @@ export class SuperCity extends Scene {
         this.shapes.square.draw(context, program_state, Mat4.identity().times(Mat4.translation(-2,-2,-1.9)).times(Mat4.scale(0.25,0.25,0.25)), this.materials.planet1.override({color:hex_color("#FF0000")}))
         this.shapes.square.draw(context, program_state, Mat4.identity().times(Mat4.translation(2,2,-1.9)).times(Mat4.scale(0.25,0.25,0.25)), this.materials.planet1.override({color:hex_color("#00FFFF")}))
         draw_selected_tile(this.selection)
-        draw_tower(context, program_state, 0,0)
+        for (let i = 0; i < this.towers.length; i++) {
+            draw_tower(context, program_state, this.towers[i][0] * 4 ,this.towers[i][1] * 4)
+        }
 
 
         //this.shapes.square.draw(context, program_state, Mat4.identity().times(Mat4.translation(0,-1,-2)), this.materials.planet1)
