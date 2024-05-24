@@ -83,6 +83,7 @@ export class SuperCity extends Scene {
         model_transform = Mat4.translation(0, 2, 0).times(model_transform);
         this.shapes.triangle.draw(context, program_state, model_transform, this.materials.house.override({color:color}));
 
+
     }
     make_ground(context, program_state, x, y)
     {
