@@ -46,6 +46,15 @@ export class SuperCity extends Scene {
         this.initial_camera_location = Mat4.look_at(vec3(0, -3, 5), vec3(0,0, 0), vec3(0, 1, 0));
         this.selection = [0,1];
         this.towers = [[2,2], [1,1], [-1,-1]];
+
+        this.desired_camera_x = 0
+        this.desired_camera_y = -5
+        this.base_speed = 0.2;
+        this.current_y_speed = this.base_speed;
+        this.current_x_speed = this.base_speed;
+        this.camera_x = this.desired_camera_x;
+        this.camera_y = this.desired_camera_y;
+        this.step = 1;
     }
 
     add_tower(x, y) {
@@ -61,13 +70,44 @@ export class SuperCity extends Scene {
         return this.towers;
     }
 
+    move_up () {
+        if (this.current_y_speed < 0 || Math.abs(this.desired_camera_y - this.camera_y) < this.current_y_speed*5) {
+            this.desired_camera_y += this.step;
+        }
+    }
+    move_down () {
+        if (this.current_y_speed > 0 || Math.abs(this.desired_camera_y - this.camera_y) < -this.current_y_speed * 5){
+            this.desired_camera_y -= this.step
+        }
+    }
+    move_right () {
+        if (this.current_x_speed < 0 || Math.abs(this.desired_camera_x - this.camera_x) < this.current_x_speed*5) {
+            this.desired_camera_x += this.step;
+        }
+    }
+    move_left () {
+        if (this.current_x_speed > 0 || Math.abs(this.desired_camera_x - this.camera_x) < -this.current_x_speed * 5){
+            this.desired_camera_x -= this.step
+        }
+    }
+
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-        this.key_triggered_button("Select up", ["ArrowUp"], () => this.selection[1]++);
-        this.key_triggered_button("Select down", ["ArrowDown"], () => this.selection[1]--);
+        this.key_triggered_button("Move up", ["ArrowUp"], this.move_up)
+            //() => this.desired_camera_y += (Math.abs(this.desired_camera_y - this.camera_y) < this.current_y_speed *10 ? this.step : 0));
+            //() => this.desired_camera_y += (Math.abs(this.desired_camera_y - this.camera_y)) < )
+        this.key_triggered_button("Move down", ["ArrowDown"], this.move_down);
+        this.new_line()
+        this.key_triggered_button("Move left", ["ArrowLeft"], this.move_left)
+        //() => this.desired_camera_y += (Math.abs(this.desired_camera_y - this.camera_y) < this.current_y_speed *10 ? this.step : 0));
+        //() => this.desired_camera_y += (Math.abs(this.desired_camera_y - this.camera_y)) < )
+        this.key_triggered_button("Move right", ["ArrowRight"], this.move_right);
+
+        this.key_triggered_button("Select up", ["Alt", "ArrowUp"], () => this.selection[1]++);
+        this.key_triggered_button("Select down", ["Alt","ArrowDown"], () => this.selection[1]--);
         this.new_line();
-        this.key_triggered_button("Select left", ["ArrowLeft"], () => this.selection[0]--);
-        this.key_triggered_button("Select right", ["ArrowRight"], () => this.selection[0]++);
+        this.key_triggered_button("Select left", ["Alt", "ArrowLeft"], () => this.selection[0]--);
+        this.key_triggered_button("Select right", ["Alt", "ArrowRight"], () => this.selection[0]++);
         this.new_line();
         this.key_triggered_button("Demolish", ["e"], () => this.remove_tower(this.selection[0], this.selection[1]));
         this.key_triggered_button("Build tower", ["t"], () => this.add_tower(this.selection[0], this.selection[1]));
@@ -108,6 +148,8 @@ export class SuperCity extends Scene {
         this.shapes.square.draw(context, program_state, model_transform, this.materials.ground_texture);
     }
     display(context, program_state) {
+        console.log(this.current_y_speed)
+        console.log (this.desired_camera_y, this.camera_y)
         const draw_tower = (context, program_state, x,y) => {
             this.shapes.cylinder.draw(
                 context, program_state,
@@ -161,28 +203,53 @@ export class SuperCity extends Scene {
         program_state.projection_transform = Mat4.perspective(
             Math.PI / 4, context.width / context.height, .1, 1000);
 
-
-        if (this.attached != null && this.attached() != null) {
-            const desired_camera_matrix = Mat4.inverse(
-                this.attached().times(
-                    Mat4.translation(0,0,5)
-                )
-            ).map(
-                (x, i) => Vector.from(program_state.camera_inverse[i]).mix(x, 0.1)
-            );
-            program_state.set_camera(desired_camera_matrix);
-        } else if (this.attached != null && this.attached() == null) {
-            program_state.set_camera(this.initial_camera_location.map(
-                (x, i) => Vector.from(program_state.camera_inverse[i]).mix(x, 0.1)
-            ))
+        // Camera Control
+        if (this.camera_y < this.desired_camera_y) {
+            this.current_y_speed = Math.min(((this.desired_camera_y - this.camera_y) / 5), this.base_speed)
+            this.camera_y += this.current_y_speed
+            if (Math.abs(this.camera_y - this.desired_camera_y) < 0.001) {
+                this.camera_y = this.desired_camera_y;
+                this.current_y_speed = this.base_speed;
+            }
+        } else if (this.camera_y > this.desired_camera_y) {
+            console.log(this.desired_camera_y)
+            this.current_y_speed = Math.max(((this.desired_camera_y - this.camera_y) / 5), -this.base_speed)
+            this.camera_y += this.current_y_speed;
+            if (Math.abs(this.camera_y - this.desired_camera_y) < 0.001) {
+                this.camera_y = this.desired_camera_y;
+                this.current_y_speed = this.base_speed;
+            }
+        } else {
+            this.current_y_speed = this.base_speed
         }
-        let x = 4
-        let y = 4
+        // Camera Control
+        if (this.camera_x < this.desired_camera_x) {
+            this.current_x_speed = Math.min(((this.desired_camera_x - this.camera_x) / 5), this.base_speed)
+            this.camera_x += this.current_x_speed
+            if (Math.abs(this.camera_x - this.desired_camera_x) < 0.001) {
+                this.camera_x = this.desired_camera_x;
+                this.current_x_speed = this.base_speed;
+            }
+        } else if (this.camera_x > this.desired_camera_x) {
+            console.log(this.desired_camera_x)
+            this.current_x_speed = Math.max(((this.desired_camera_x - this.camera_x) / 5), -this.base_speed)
+            this.camera_x += this.current_x_speed;
+            if (Math.abs(this.camera_x - this.desired_camera_x) < 0.001) {
+                this.camera_x = this.desired_camera_x;
+                this.current_x_speed = this.base_speed;
+            }
+        } else {
+            this.current_x_speed = this.base_speed
+        }
+        const desired_camera_matrix = Mat4.inverse(Mat4.identity().times(Mat4.translation(this.camera_x,this.camera_y,20)).times(Mat4.rotation(Math.PI/6, 1,0,0)));
+        program_state.set_camera(desired_camera_matrix);
+
+
         program_state.lights = [new Light(vec4(-6, -6, 20, 1), color(1,1,1), 10000)];
 
         //for houses
         const pink = hex_color("#FFC0CB")
-        this.draw_house(context, program_state, x,y, pink)
+        this.draw_house(context, program_state, 4,4, pink)
 
 
 
@@ -200,53 +267,6 @@ export class SuperCity extends Scene {
 
 
 
-    }
-}
-
-
-class Ring_Shader extends Shader {
-    update_GPU(context, gpu_addresses, graphics_state, model_transform, material) {
-        // update_GPU():  Defining how to synchronize our JavaScript's variables to the GPU's:
-        const [P, C, M] = [graphics_state.projection_transform, graphics_state.camera_inverse, model_transform],
-            PCM = P.times(C).times(M);
-        context.uniformMatrix4fv(gpu_addresses.model_transform, false, Matrix.flatten_2D_to_1D(model_transform.transposed()));
-        context.uniformMatrix4fv(gpu_addresses.projection_camera_model_transform, false,
-            Matrix.flatten_2D_to_1D(PCM.transposed()));
-    }
-
-    shared_glsl_code() {
-        // ********* SHARED CODE, INCLUDED IN BOTH SHADERS *********
-        return `
-        precision mediump float;
-        varying vec4 point_position;
-        varying vec4 center;
-        `;
-    }
-
-    vertex_glsl_code() {
-        // ********* VERTEX SHADER *********
-        // TODO:  Complete the main function of the vertex shader (Extra Credit Part II). according to slides calculate gl_position here
-        return this.shared_glsl_code() + `
-        attribute vec3 position;
-        uniform mat4 model_transform;
-        uniform mat4 projection_camera_model_transform;
-        
-        void main(){
-          gl_Position = projection_camera_model_transform * vec4(position, 1.0);
-          point_position = vec4(position, 1.0);
-          center = vec4(0.0,0.0,0.0,1.0);
-        }`;
-    }
-
-    fragment_glsl_code() {
-        // ********* FRAGMENT SHADER *********
-        // TODO:  Complete the main function of the fragment shader (Extra Credit Part II).
-        return this.shared_glsl_code() + `
-        void main(){
-            float distance_center = distance(point_position, center);
-            float factor = 0.5 + 0.5 * sin(distance_center*8.0 * (2.0 * 3.14159));
-            gl_FragColor = vec4(0.6875 * factor, 0.5 * factor,0.25*factor,1);
-        }`;
     }
 }
 
