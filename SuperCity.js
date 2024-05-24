@@ -130,7 +130,6 @@ export class SuperCity extends Scene {
     {
         let model_transform = Mat4.identity().times(Mat4.translation(x,y,-1))
         const new_model_transform = model_transform;
-        //this.draw_ground(context, program_state, x, y)
         this.shapes.cube.draw(context, program_state, model_transform, this.materials.house.override({color:color}));
 
         model_transform = Mat4.rotation(Math.PI/6, 0, -1, 0).times(model_transform);
@@ -155,11 +154,17 @@ export class SuperCity extends Scene {
 
 
     }
-    draw_ground(context, program_state, x, y)
-    {
-        let model_transform = Mat4.identity().times(Mat4.translation(x/2,y/2,-1.9))
-        model_transform = Mat4.scale(2,2,1).times(model_transform);
-        this.shapes.square.draw(context, program_state, model_transform, this.materials.ground_texture);
+    draw_ground(context, program_state, x, y) {
+        const tile_size = 2; // Size of each ground tile
+        const grid_size = 16; // 8x8 grid of tiles
+
+        for (let i = 0; i < grid_size; i++) {
+            for (let j = 0; j < grid_size; j++) {
+                let model_transform = Mat4.identity().times(Mat4.translation((i - grid_size / 2) * tile_size, (j - grid_size / 2) * tile_size, -1.9));
+                model_transform = Mat4.scale(tile_size, tile_size, 1).times(model_transform);
+                this.shapes.square.draw(context, program_state, model_transform, this.materials.ground_texture);
+            }
+        }
     }
 
     draw_tower (context, program_state, x, y)  {
@@ -271,6 +276,7 @@ export class SuperCity extends Scene {
 
 
         this.shapes.square.draw(context, program_state, Mat4.identity().times(Mat4.translation(0,0,-2)).times(Mat4.scale(20,20,20)), this.materials.planet1)
+        this.draw_ground(context, program_state, 0, 0)
         draw_selected_tile(this.selection)
         for (let i = 0; i < this.towers.length; i++) {
             this.draw_tower(context, program_state, this.towers[i][0] * 4 ,this.towers[i][1] * 4);
