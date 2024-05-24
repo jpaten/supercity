@@ -38,7 +38,7 @@ export class SuperCity extends Scene {
             door: new Material(new defs.Textured_Phong(),
                 {color: hex_color("#000000"), texture: new Texture("./assets/door.png"), ambient:1}),
             selected_square: new Material(new defs.Phong_Shader(),
-                {color: hex_color("#64f63f"), ambient: 0.5, specularity: 0, diffusivity: 0.5}),
+                {color: hex_color("#ff005b"), ambient: 0.5, specularity: 0, diffusivity: 0.5}),
             ground_texture: new Material(new defs.Textured_Phong(),
                 {color: hex_color("#000000"), texture: new Texture("./assets/ground.png"), ambient: 1}),
         }
@@ -121,7 +121,7 @@ export class SuperCity extends Scene {
         this.key_triggered_button("Select left", ["Alt", "ArrowLeft"], () => this.selection[0]--);
         this.key_triggered_button("Select right", ["Alt", "ArrowRight"], () => this.selection[0]++);
         this.new_line();
-        this.key_triggered_button("Demolish", ["e"], () => this.remove_tower(this.selection[0], this.selection[1]));
+        this.key_triggered_button("Demolish", ["e"], () => this.remove(this.selection[0], this.selection[1]));
         this.new_line();
         this.key_triggered_button("Build tower", ["t"], () => this.add_tower(this.selection[0], this.selection[1]));
         this.key_triggered_button("Build house", ["h"], () => this.add_house(this.selection[0], this.selection[1]));
@@ -276,7 +276,6 @@ export class SuperCity extends Scene {
 
 
         this.shapes.square.draw(context, program_state, Mat4.identity().times(Mat4.translation(0,0,-2)).times(Mat4.scale(20,20,20)), this.materials.planet1)
-        this.draw_ground(context, program_state, 0, 0)
         draw_selected_tile(this.selection)
         for (let i = 0; i < this.towers.length; i++) {
             this.draw_tower(context, program_state, this.towers[i][0] * 4 ,this.towers[i][1] * 4);
@@ -284,6 +283,8 @@ export class SuperCity extends Scene {
         for (let i = 0; i < this.houses.length; i++){
             this.draw_house(context, program_state, this.houses[i][0] * 4, this.houses[i][1] * 4, pink);
         }
+        this.draw_ground(context, program_state, 0, 0)
+
 
 
         //this.shapes.square.draw(context, program_state, Mat4.identity().times(Mat4.translation(0,-1,-2)), this.materials.planet1)
