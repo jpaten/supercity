@@ -36,7 +36,9 @@ export class SuperCity extends Scene {
             helipad_texture: new Material(new defs.Textured_Phong(),
                 {color: hex_color("#000000"), texture: new Texture("./assets/helipad.png"), ambient: 1}),
             door: new Material(new defs.Textured_Phong(),
-                {color: hex_color("#000000"), texture: new Texture("./assets/door.png"), ambient:1})
+                {color: hex_color("#000000"), texture: new Texture("./assets/door.png"), ambient:1}),
+            ground_texture: new Material(new defs.Textured_Phong(),
+                {color: hex_color("#000000"), texture: new Texture("./assets/ground.png"), ambient: 1})
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, -3, 5), vec3(0,0, 0), vec3(0, 1, 0));
@@ -56,31 +58,38 @@ export class SuperCity extends Scene {
     }
     draw_house(context, program_state, x, y, color)
     {
-        let model_transform = Mat4.identity().times(Mat4.translation(0,0,-1))
-        let new_model_transform = model_transform;
+        let model_transform = Mat4.identity().times(Mat4.translation(x,y,-1))
+        const new_model_transform = model_transform;
+        this.make_ground(context, program_state, x, y)
         this.shapes.cube.draw(context, program_state, model_transform, this.materials.house.override({color:color}));
+
         model_transform = Mat4.rotation(Math.PI/6, 0, -1, 0).times(model_transform);
-        model_transform = Mat4.translation(-1.35, 0, 1.15).times(model_transform);
+        model_transform = Mat4.translation(0.5, 0, -0.85).times(model_transform);
         model_transform = Mat4.scale(0.75,1,1.2).times(model_transform);
         const blk = vec4(0, 0, 0, 1);
         color = color.mix(blk,0.5)
         this.shapes.square.draw(context, program_state, model_transform, this.materials.house.override({color:color}));
-        model_transform = new_model_transform;
-        model_transform = Mat4.rotation( Math.PI/6, 0, 1, 0).times(model_transform);
-        model_transform = Mat4.translation(1.35, 0, 1.15).times(model_transform);
-        model_transform = Mat4.scale(0.75,1,1.2).times(model_transform);
+
+        model_transform = Mat4.rotation( Math.PI, 0, 0, 1).times(model_transform);
+        model_transform = Mat4.translation(2*x, 2*y, 0).times(model_transform);
         this.shapes.square.draw(context, program_state, model_transform, this.materials.house.override({color:color}));
+
         model_transform = new_model_transform
         model_transform = Mat4.rotation( 3*(Math.PI/2), 1, 0, 0).times(model_transform)
         model_transform = Mat4.rotation( (Math.PI/4), 0, 1, 0).times(model_transform)
         model_transform = Mat4.scale(1.5,1.5,1.5).times(model_transform);
-        model_transform = Mat4.translation(0, 0.5, 1).times(model_transform);
+        model_transform = Mat4.translation(x, y+0.5, 9.5).times(model_transform);
         this.shapes.triangle.draw(context, program_state, model_transform, this.materials.house.override({color:color}));
         model_transform = Mat4.translation(0, 2, 0).times(model_transform);
         this.shapes.triangle.draw(context, program_state, model_transform, this.materials.house.override({color:color}));
 
     }
-
+    make_ground(context, program_state, x, y)
+    {
+        let model_transform = Mat4.identity().times(Mat4.translation(x/2,y/2,-1.9))
+        model_transform = Mat4.scale(2,2,1).times(model_transform);
+        this.shapes.square.draw(context, program_state, model_transform, this.materials.ground_texture);
+    }
     display(context, program_state) {
         const draw_tower = (context, program_state, x,y) => {
             this.shapes.cylinder.draw(
@@ -138,8 +147,8 @@ export class SuperCity extends Scene {
                 (x, i) => Vector.from(program_state.camera_inverse[i]).mix(x, 0.1)
             ))
         }
-        let x = 0
-        let y = 0
+        let x = 4
+        let y = 4
         program_state.lights = [new Light(vec4(-6, -6, 20, 1), color(1,1,1), 10000)];
 
         //for houses
