@@ -126,34 +126,52 @@ export class SuperCity extends Scene {
         this.key_triggered_button("Build tower", ["t"], () => this.add_tower(this.selection[0], this.selection[1]));
         this.key_triggered_button("Build house", ["h"], () => this.add_house(this.selection[0], this.selection[1]));
     }
-    draw_house(context, program_state, x, y, color)
-    {
-        let model_transform = Mat4.identity().times(Mat4.translation(x,y,-1))
-        const new_model_transform = model_transform;
-        this.shapes.cube.draw(context, program_state, model_transform, this.materials.house.override({color:color}));
+    draw_house(context, program_state, x, y, color) {
+    let model_transform = Mat4.identity().times(Mat4.translation(x, y, -1));
+    this.shapes.cube.draw(context, program_state, model_transform, this.materials.house.override({color: color}));
 
-        model_transform = Mat4.rotation(Math.PI/6, 0, -1, 0).times(model_transform);
-        model_transform = Mat4.translation(0.5, 0, -0.85).times(model_transform);
-        model_transform = Mat4.scale(0.75,1,1.2).times(model_transform);
-        const blk = vec4(0, 0, 0, 1);
-        color = color.mix(blk,0.5)
-        this.shapes.square.draw(context, program_state, model_transform, this.materials.house.override({color:color}));
+    const blk = vec4(0, 0, 0, 1);
+    const mixed_color = color.mix(blk, 0.5);
 
-        model_transform = Mat4.rotation( Math.PI, 0, 0, 1).times(model_transform);
-        model_transform = Mat4.translation(2*x, 2*y, 0).times(model_transform);
-        this.shapes.square.draw(context, program_state, model_transform, this.materials.house.override({color:color}));
+    // Draw the first slanted rectangle
+    let roof_transform = model_transform;
+    roof_transform = roof_transform.times(Mat4.translation(-0.5, 0.0, 1.6));  // Move to top of the cube
+    roof_transform = roof_transform.times(Mat4.rotation(Math.PI / 4, 0, -1, 0));  // Rotate to be slanted
+    roof_transform = roof_transform.times(Mat4.scale(0.75, 1, Math.sqrt(2) / 2));  // Scale to cover the top of the cube
+    this.shapes.square.draw(context, program_state, roof_transform, this.materials.house.override({color: mixed_color}));
 
-        model_transform = new_model_transform
-        model_transform = Mat4.rotation( 3*(Math.PI/2), 1, 0, 0).times(model_transform)
-        model_transform = Mat4.rotation( (Math.PI/4), 0, 1, 0).times(model_transform)
-        model_transform = Mat4.scale(1.5,1.5,1.5).times(model_transform);
-        model_transform = Mat4.translation(x, y+0.5, 9.5).times(model_transform);
-        this.shapes.triangle.draw(context, program_state, model_transform, this.materials.house.override({color:color}));
-        model_transform = Mat4.translation(0, 2, 0).times(model_transform);
-        this.shapes.triangle.draw(context, program_state, model_transform, this.materials.house.override({color:color}));
+    // Draw the second slanted rectangle
+    roof_transform = model_transform;
+    roof_transform = roof_transform.times(Mat4.translation(0.5, 0.0, 1.6));  // Move to top of the cube
+    roof_transform = roof_transform.times(Mat4.rotation(-Math.PI / 4, 0,-1 , 0));  // Rotate to be slanted
+    roof_transform = roof_transform.times(Mat4.scale(0.75, 1, Math.sqrt(2) / 2));  // Scale to cover the top of the cube
+    this.shapes.square.draw(context, program_state, roof_transform, this.materials.house.override({color: mixed_color}));
 
+    // Draw the first triangle
+    let triangle_transform = model_transform;
+    triangle_transform = triangle_transform.times(Mat4.translation(0, 1, 2.1));  // Move to top of the cube
+    triangle_transform = triangle_transform.times(Mat4.rotation(Math.PI / 2, -1, 0, 0));  // Rotate to be perpendicular to the roof
+    triangle_transform = triangle_transform.times(Mat4.rotation(Math.PI / 4, 0, 0, 1));  // Rotate to be perpendicular to the roof
+    triangle_transform = triangle_transform.times(Mat4.scale(1.5, 1.5, 1.5));  // Scale to cover the triangular hole
+    this.shapes.triangle.draw(context, program_state, triangle_transform, this.materials.house.override({color: mixed_color}));
 
-    }
+    // Draw the second triangle
+    triangle_transform = model_transform;
+    triangle_transform = triangle_transform.times(Mat4.translation(0, -1, 2.1));  // Move to top of the cube
+    triangle_transform = triangle_transform.times(Mat4.rotation(Math.PI / 2, -1, 0, 0));  // Rotate to be perpendicula
+    triangle_transform = triangle_transform.times(Mat4.rotation(Math.PI / 4, 0, 0, 1));  // Rotate to be perpendicular to the roof
+    triangle_transform = triangle_transform.times(Mat4.scale(1.5, 1.5, 1.5));  // Scale to cover the triangular hole
+    this.shapes.triangle.draw(context, program_state, triangle_transform, this.materials.house.override({color: mixed_color}));
+
+    //Draw door
+    let door_transform = model_transform;
+    door_transform = door_transform.times(Mat4.translation(0, -1.05, -0.3));
+    door_transform = door_transform.times(Mat4.scale(0.5,0.5,0.5));
+    door_transform = door_transform.times(Mat4.rotation(Math.PI/2.0, -1, 0, 0));
+    this.shapes.square.draw(context, program_state, door_transform, this.materials.door)
+
+}
+
     draw_ground(context, program_state, x, y) {
         const tile_size = 2; // Size of each ground tile
         const grid_size = 16; // 8x8 grid of tiles
