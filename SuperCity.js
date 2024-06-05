@@ -89,6 +89,11 @@ export class SuperCity extends Scene {
         this.superhero_jump_time = 0;
         this.superhero_moving_forward = false;
         this.superhero_moving_backward = false;
+
+        this.cd_cylinders = [];
+        this.cd_cubes = []
+
+
     }
 
     add_tower(x, y) {
@@ -452,7 +457,7 @@ export class SuperCity extends Scene {
             // Update acceleration based on boost
             if (this.superhero_boost_time > 90) {
                 this.superhero_accel_forward = 0.011 * Math.sin(this.superhero_tilt_angle);
-                this.superhero_accel_y = -0.011 * Math.cos(this.superhero_tilt_angle);
+                this.superhero_accel_y = -0.011 * Math.cos(this.superhero_tilt_angle) + 0.01;
                 this.superhero_boost_time--;
             } else if (this.superhero_boost_time < 90 && this.superhero_boost_time > 0) {
                 this.superhero_accel_forward -= 0.01/90;
