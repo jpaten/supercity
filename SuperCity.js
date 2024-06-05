@@ -539,7 +539,7 @@ export class SuperCity extends Scene {
         const pink = hex_color("#FFC0CB")
         //this.draw_house(context, program_state, 4,4, pink)
 
-        this.shapes.axis.draw(context, program_state, Mat4.identity().times(Mat4.translation(0,0,5)), this.materials.planet1);
+        //this.shapes.axis.draw(context, program_state, Mat4.identity().times(Mat4.translation(0,0,5)), this.materials.planet1);
 
 
         this.shapes.square.draw(context, program_state, Mat4.identity().times(Mat4.translation(0,0,-2)).times(Mat4.scale(20,20,20)), this.materials.planet1)
