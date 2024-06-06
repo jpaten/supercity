@@ -49,6 +49,8 @@ export class SuperCity extends Scene {
                 {color: hex_color("#ff005b"), ambient: 0.5, specularity: 0, diffusivity: 0.5}),
             ground_texture: new Material(new defs.Textured_Phong(),
                 {color: hex_color("#101010"), texture: new Texture("./assets/ground.png"), ambient: 0.4, diffusivity: 1, specularity: 0.3}),
+            asteroid: new Material(new defs.Phong_Shader(),
+                {color: hex_color("#FF0000"), ambient: 0.3, diffusivity: 0.3, specularity: 0.})
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, -3, 5), vec3(0,0, 0), vec3(0, 1, 0));
@@ -56,6 +58,7 @@ export class SuperCity extends Scene {
         this.towers = [[2,2], [-1,-1]];
         this.houses = [[1,3], [1,1]];
         this.offices = [[1,2]];
+        this.hazards = []
 
         this.desired_camera_x = 0
         this.desired_camera_y = -5
@@ -65,8 +68,8 @@ export class SuperCity extends Scene {
         this.current_y_speed = this.base_speed;
         this.current_x_speed = this.base_speed;
         this.camera_x = this.desired_camera_x;
-        this.camera_y = this.desired_camera_y;
-        this.camera_z = this.desired_camera_z;
+        this.camera_z = this.desired_camera_y;
+        this.camera_y = this.desired_camera_z;
         this.step = 1;
 
         this.in_superhero_mode = false;
@@ -89,6 +92,34 @@ export class SuperCity extends Scene {
         this.superhero_jump_time = 0;
         this.superhero_moving_forward = false;
         this.superhero_moving_backward = false;
+
+        this.cd_cylinders = [];
+        this.cd_cubes = []
+
+
+    }
+
+    add_hazards(min_asteroids, max_asteroids, max_height, min_height) {
+        if (this.hazards.length > 0) {
+            return;
+        }
+        const num_asteroids = min_asteroids === max_asteroids ? min_asteroids : (Math.floor(Math.random() * (max_asteroids - min_asteroids)) + min_asteroids);
+        console.log("ASTEROIDS GENERATED", num_asteroids);
+        const possible_positions = this.offices.concat(this.houses.concat(this.towers))
+        const square_positions = []
+        for(let i = 0; i < num_asteroids; i++) {
+            let square_position = -1
+            while (square_position === -1 || square_positions.includes(square_position)) {
+                square_position = Math.floor(Math.random() * possible_positions.length);
+            }
+            if (! square_positions.includes(square_position)) {
+                square_positions.push(square_position)
+            }
+            const square = possible_positions[square_position]
+            const height = Math.floor(Math.random() * (max_height - min_height)) + min_height;
+            this.hazards.push([square[0], square[1], height]);
+        }
+        console.log(square_positions)
     }
 
     add_tower(x, y) {
@@ -123,6 +154,11 @@ export class SuperCity extends Scene {
         this.towers = this.towers.filter((i) => (i[0] !== x) || (i[1] !== y));
         this.houses = this.houses.filter((i) => (i[0] !== x) || (i[1] !== y));
         this.offices = this.offices.filter((i) => (i[0] !== x) || (i[1] !== y));
+        this.hazards = this.hazards.filter((i) => (i[0] !== x) || (i[1] !== y));
+    }
+
+    remove_hazard(position) {
+        this.hazards.splice(position, 1)
     }
 
     move_up () {
@@ -134,7 +170,7 @@ export class SuperCity extends Scene {
                 this.superhero_tilt_angular_velocity = Math.PI / 70;
             }
         }
-        else if (this.current_y_speed < 0 || Math.abs(this.desired_camera_y - this.camera_y) < this.current_y_speed*5) {
+        else if (this.current_y_speed < 0 || Math.abs(this.desired_camera_y - this.camera_z) < this.current_y_speed*5) {
             this.desired_camera_y += this.step;
         }
     }
@@ -155,7 +191,7 @@ export class SuperCity extends Scene {
                 this.superhero_tilt_angular_velocity = -Math.PI / 70;
             }
         }
-        else if (this.current_y_speed > 0 || Math.abs(this.desired_camera_y - this.camera_y) < -this.current_y_speed * 5){
+        else if (this.current_y_speed > 0 || Math.abs(this.desired_camera_y - this.camera_z) < -this.current_y_speed * 5){
             this.desired_camera_y -= this.step
         }
     }
@@ -193,12 +229,12 @@ export class SuperCity extends Scene {
         this.in_superhero_mode = ! this.in_superhero_mode;
         if (this.in_superhero_mode) {
             this.camera_x = this.selection[0]*4;
-            this.camera_y = this.selection[1]*4;
-            this.camera_z = 5;
+            this.camera_z = this.selection[1]*4;
+            this.camera_y = 5;
         } else {
             this.camera_x = this.desired_camera_x;
-            this.camera_y = this.desired_camera_y;
-            this.camera_z = this.desired_camera_z;
+            this.camera_z = this.desired_camera_y;
+            this.camera_y = this.desired_camera_z;
         }
         console.log(this.in_superhero_mode);
     }
@@ -208,18 +244,60 @@ export class SuperCity extends Scene {
             this.superhero_boost_time = 100;
         } else {
             this.superhero_jump_time = 3;
-            this.camera_y += 0.0001;
+            this.camera_z += 0.0001;
         }
     }
 
     lower_collision () {
-        return {"result": this.camera_y <= -1.7, "edge": -1.7};
+        return {"result": this.camera_z <= -1.7, "edge": -1.7};
+    }
+
+
+    hazard_collision() {
+        for (let i = 0; i < this.hazards.length; i++) {
+            if (Math.sqrt((this.camera_x - this.hazards[i][0]*4) ** 2 + (this.camera_y - this.hazards[i][1]*4) ** 2 + (this.camera_z - this.hazards[i][2]) ** 2) < 3) {
+                //TODO: add sound here
+                console.log(i)
+                this.remove_hazard(i)
+                //this.hazards = this.hazards
+            }
+        }
+    }
+
+    hazard_movement() {
+        let i = 0
+        const to_remove = [];
+        for (let i = 0; i < this.hazards.length; i++) {
+            this.hazards[i][2] -= 0.003;
+            let removed = false;
+            for (let j = 0; j < this.towers.length; j++) {
+                if (compare_coords(this.hazards[i].slice(0, 2), this.towers[j]) && this.hazards[i][2] < 4.75) {
+                    this.remove(...this.towers[j]);
+                    removed = true;
+                    break;
+                }
+            }
+            if (removed) {
+                break;
+            }
+
+            const short_buildings = this.offices.concat(this.houses);
+            for (let j = 0; j < short_buildings.length; j++) {
+                if (compare_coords(this.hazards[i].slice(0,2), short_buildings[j]) && this.hazards[i][2] < 2) {
+                    this.remove(...short_buildings[j]);
+                    break;
+                }
+            }
+        }
     }
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
         this.key_triggered_button("Toggle Superhero Mode", ["l"], this.toggle_superhero_mode);
         this.key_triggered_button("Superhero Jump / Boost", ["k"], this.superhero_jump_boost);
+        this.new_line();
+        this.key_triggered_button("Asteroids!", ["j"], () => this.add_hazards(3, 6, 7,10))
+        this.new_line();
         this.key_triggered_button("Move up", ["ArrowUp"], this.move_up, undefined, this.move_up_release)
             //() => this.desired_camera_y += (Math.abs(this.desired_camera_y - this.camera_y) < this.current_y_speed *10 ? this.step : 0));
             //() => this.desired_camera_y += (Math.abs(this.desired_camera_y - this.camera_y)) < )
@@ -242,6 +320,15 @@ export class SuperCity extends Scene {
         this.key_triggered_button("Build house", ["h"], () => this.add_house(this.selection[0], this.selection[1]));
         this.key_triggered_button("Build office", ["o"], () => this.add_office(this.selection[0], this.selection[1]));
     }
+
+    draw_hazard(context, program_state, x, y, z, color) {
+        this.shapes.sphere.draw(
+            context, program_state,
+            Mat4.identity().times(Mat4.translation(x*4,y*4,z)).times(Mat4.scale(1.3,1.3,1.3)),
+            this.materials.asteroid.override(color)
+        );
+    }
+
     draw_house(context, program_state, x, y, color) {
         let model_transform = Mat4.identity().times(Mat4.translation(x, y, -1));
         this.shapes.cube.draw(context, program_state, model_transform, this.materials.house.override({color: color}));
@@ -401,19 +488,19 @@ export class SuperCity extends Scene {
 
         if (! this.in_superhero_mode) {
             // Camera Control
-            if (this.camera_y < this.desired_camera_y) {
-                this.current_y_speed = Math.min(((this.desired_camera_y - this.camera_y) / 5), this.base_speed)
-                this.camera_y += this.current_y_speed
-                if (Math.abs(this.camera_y - this.desired_camera_y) < 0.001) {
-                    this.camera_y = this.desired_camera_y;
+            if (this.camera_z < this.desired_camera_y) {
+                this.current_y_speed = Math.min(((this.desired_camera_y - this.camera_z) / 5), this.base_speed)
+                this.camera_z += this.current_y_speed
+                if (Math.abs(this.camera_z - this.desired_camera_y) < 0.001) {
+                    this.camera_z = this.desired_camera_y;
                     this.current_y_speed = this.base_speed;
                 }
-            } else if (this.camera_y > this.desired_camera_y) {
+            } else if (this.camera_z > this.desired_camera_y) {
                 console.log(this.desired_camera_y)
-                this.current_y_speed = Math.max(((this.desired_camera_y - this.camera_y) / 5), -this.base_speed)
-                this.camera_y += this.current_y_speed;
-                if (Math.abs(this.camera_y - this.desired_camera_y) < 0.001) {
-                    this.camera_y = this.desired_camera_y;
+                this.current_y_speed = Math.max(((this.desired_camera_y - this.camera_z) / 5), -this.base_speed)
+                this.camera_z += this.current_y_speed;
+                if (Math.abs(this.camera_z - this.desired_camera_y) < 0.001) {
+                    this.camera_z = this.desired_camera_y;
                     this.current_y_speed = this.base_speed;
                 }
             } else {
@@ -441,7 +528,7 @@ export class SuperCity extends Scene {
             const desired_camera_matrix = Mat4.inverse(
                 Mat4.identity().times(
                     Mat4.translation(
-                        this.camera_x,this.camera_y,this.camera_z
+                        this.camera_x,this.camera_z,this.camera_y
                     )
                 ).times(Mat4.rotation(Math.PI/6, 1,0,0))
             );
@@ -452,7 +539,7 @@ export class SuperCity extends Scene {
             // Update acceleration based on boost
             if (this.superhero_boost_time > 90) {
                 this.superhero_accel_forward = 0.011 * Math.sin(this.superhero_tilt_angle);
-                this.superhero_accel_y = -0.011 * Math.cos(this.superhero_tilt_angle);
+                this.superhero_accel_y = -0.011 * Math.cos(this.superhero_tilt_angle) + 0.01;
                 this.superhero_boost_time--;
             } else if (this.superhero_boost_time < 90 && this.superhero_boost_time > 0) {
                 this.superhero_accel_forward -= 0.01/90;
@@ -471,12 +558,11 @@ export class SuperCity extends Scene {
                 this.superhero_accel_y += GRAVITY
                 this.superhero_jump_time = 0;
             }
-
             // Collision detection
             if (this.lower_collision().result) {
                 this.superhero_accel_y = 0;
                 this.superhero_velocity_y = 0;
-                this.camera_y = this.lower_collision().edge;
+                this.camera_z = this.lower_collision().edge;
                 /*if (this.superhero_velocity_forward > 0.05 && ! this.superhero_moving_forward) {
                     this.superhero_accel_forward = -0.02;
                 } else if (!this.superhero_moving_forward) {
@@ -493,9 +579,14 @@ export class SuperCity extends Scene {
                 console.log("wizz");
                 // Air Resistance
                 if (this.superhero_boost_time < 90) {
-                    this.superhero_accel_forward = AIR_RESISTANCE;
+                    if(this.superhero_accel_forward > 0) {
+                        this.superhero_accel_forward = -0.01
+                    } else if (this.superhero_accel_forward < 0) {
+                        this.superhero_accel_forward = 0.01
+                    }
                 }
             }
+
 
             // Update velocities based on accelerations
             //this.superhero_velocity_z += this.superhero_accel_forward * Math.sin(this.superhero_pan_angle);
@@ -503,19 +594,20 @@ export class SuperCity extends Scene {
             //this.superhero_velocity_x += this.superhero_accel_forward * Math.cos(this.superhero_pan_angle);
             this.superhero_velocity_forward += this.superhero_accel_forward;
             // Update camera position
-            this.camera_z += this.superhero_velocity_forward * Math.cos(this.superhero_pan_angle);
-            this.camera_y += this.superhero_velocity_y;
+            this.camera_y += this.superhero_velocity_forward * Math.cos(this.superhero_pan_angle);
+            this.camera_z += this.superhero_velocity_y;
             this.camera_x += -this.superhero_velocity_forward * Math.sin(this.superhero_pan_angle);
             this.superhero_roll_angle += this.superhero_roll_angular_velocity;
             this.superhero_tilt_angle += this.superhero_tilt_angular_velocity;
             this.superhero_pan_angle += this.superhero_pan_angular_velocity;
             console.log(Math.cos(this.superhero_tilt_angle))
-            console.log(this.camera_x, this.camera_y, this.camera_z);
+            console.log(this.camera_x, this.camera_z, this.camera_y);
+            this.hazard_collision();
 
             // Set camera matrix
             const desired_camera_matrix = Mat4.inverse(
                 Mat4.identity().times(
-                    Mat4.translation(this.camera_x, this.camera_z, this.camera_y)
+                    Mat4.translation(this.camera_x, this.camera_y, this.camera_z)
                 ).times(
                     Mat4.rotation(this.superhero_pan_angle, 0,0,1)
                 ).times(
@@ -533,8 +625,8 @@ export class SuperCity extends Scene {
         }
 
         this.draw_lighting(context, program_state);
+        this.hazard_movement();
         //program_state.lights = [new Light(vec4(-6, -6, 20, 1), color(1,1,1), 10000)];
-
         //for houses
         const pink = hex_color("#FFC0CB")
         //this.draw_house(context, program_state, 4,4, pink)
@@ -553,6 +645,10 @@ export class SuperCity extends Scene {
         for (let i = 0; i < this.offices.length; i++){
             let temp = [this.offices[i][0], this.offices[i][1]];
             this.draw_OfficeBuilding(context, program_state, temp);
+        }
+        for (let i = 0; i < this.hazards.length; i++) {
+
+            this.draw_hazard(context, program_state, this.hazards[i][0], this.hazards[i][1], this.hazards[i][2], hex_color("#cb7878"));
         }
         this.draw_ground(context, program_state, 0, 0);
     }
