@@ -108,11 +108,19 @@ export class SuperCity extends Scene {
 
     }
 
-    add_hazards(min_asteroids, max_asteroids, max_height, min_height) {
+    add_hazards(min_asteroids, ideal_max_asteroids, max_height, min_height) {
         if (this.hazards.length > 0) {
             return;
         }
-        const num_asteroids = min_asteroids === max_asteroids ? min_asteroids : (Math.floor(Math.random() * (max_asteroids - min_asteroids)) + min_asteroids);
+        let max_asteroids = ideal_max_asteroids
+        const num_buildings = this.houses.length + this.buildings.length + this.offices.length + this.towers.length
+        if (ideal_max_asteroids > num_buildings) {
+            return;
+            max_asteroids = num_buildings
+        }
+        console.log("max asteroids", num_buildings)
+        console.log(this.houses, this.buildings, this.offices, this.towers)
+        const num_asteroids = min_asteroids >= max_asteroids ? max_asteroids : (Math.floor(Math.random() * (max_asteroids - min_asteroids)) + min_asteroids);
         console.log("ASTEROIDS GENERATED", num_asteroids);
         const possible_positions = this.offices.concat(this.houses.concat(this.towers))
         const square_positions = []
@@ -131,7 +139,15 @@ export class SuperCity extends Scene {
         console.log(square_positions)
     }
 
-    add_tower(x, y) {
+    add_random_tower(x, y) {
+        if (Math.random() <= 0.5) {
+            this.add_rectangular_tower(x, y);
+        } else {
+            this.add_cylinder_tower(x, y);
+        }
+    }
+
+    add_cylinder_tower(x, y) {
         for (let i = 0; i < this.towers.length; i++) {
             if (compare_coords(this.towers[i], [x,y])) {
                 return;
@@ -149,7 +165,7 @@ export class SuperCity extends Scene {
         }
         this.houses.push([x,y]);
     }
-     add_building(x,y) {
+     add_rectangular_tower(x, y) {
         console.log(x,y)
         for (let i = 0; i < this.buildings.length; i++) {
             if (compare_coords(this.buildings[i], [x,y])) {
@@ -347,7 +363,7 @@ export class SuperCity extends Scene {
         this.new_line();
         this.key_triggered_button("Demolish", ["e"], () => this.remove(this.selection[0], this.selection[1]));
         this.new_line();
-        this.key_triggered_button("Build tower", ["t"], () => this.add_tower(this.selection[0], this.selection[1]));
+        this.key_triggered_button("Build tower", ["t"], () => this.add_random_tower(this.selection[0], this.selection[1]));
         this.key_triggered_button("Build house", ["h"], () => this.add_house(this.selection[0], this.selection[1]));
         this.key_triggered_button("Build office", ["o"], () => this.add_office(this.selection[0], this.selection[1]));
     }
@@ -817,7 +833,7 @@ export class SuperCity extends Scene {
             this.draw_house(context, program_state, this.houses[i][0] * 4, this.houses[i][1] * 4, pink);
         }
         for (let i = 0; i < this.buildings.length; i++){
-            this.draw_building(context, program_state, this.buildings[i][0] * 4, this.houses[i][1] * 4, 5);
+            this.draw_building(context, program_state, this.buildings[i][0] * 4, this.buildings[i][1] * 4, 5);
         }
         for (let i = 0; i < this.offices.length; i++){
             let temp = [this.offices[i][0], this.offices[i][1]];
