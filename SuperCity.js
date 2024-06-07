@@ -441,7 +441,7 @@ export class SuperCity extends Scene {
                     else if(theta >= Math.PI-.588 || theta < -Math.PI+.588){
                         this.camera_x -= (localX-.15);
                     }
-                    else if(theta >= -Math.PI+588 && theta < -.588){
+                    else if(theta >= -Math.PI+.588 && theta < -.588){
                         this.camera_y -= (localY-.65);
                     }
                 }
