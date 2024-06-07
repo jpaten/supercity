@@ -65,6 +65,7 @@ export class SuperCity extends Scene {
         this.towers = [[2,2], [-1,-1]];
         this.houses = [[1,3], [1,1]];
         this.offices = [[1,2]];
+        this.buildings = [[0,-1],[0,-3]];
         this.hazards = []
 
         this.desired_camera_x = 0
@@ -147,6 +148,15 @@ export class SuperCity extends Scene {
         }
         this.houses.push([x,y]);
     }
+     add_building(x,y) {
+        console.log(x,y)
+        for (let i = 0; i < this.buildings.length; i++) {
+            if (compare_coords(this.buildings[i], [x,y])) {
+                return;
+            }
+        }
+        this.buildings.push([x,y]);
+    }
 
     add_office(x, y) {
         for (let i = 0; i < this.offices.length; i++) {
@@ -161,6 +171,7 @@ export class SuperCity extends Scene {
         this.towers = this.towers.filter((i) => (i[0] !== x) || (i[1] !== y));
         this.houses = this.houses.filter((i) => (i[0] !== x) || (i[1] !== y));
         this.offices = this.offices.filter((i) => (i[0] !== x) || (i[1] !== y));
+        this.buildings = this.buildings.filter((i) => (i[0] !== x) || (i[1] !== y))
         this.hazards = this.hazards.filter((i) => (i[0] !== x) || (i[1] !== y));
     }
 
@@ -336,7 +347,7 @@ export class SuperCity extends Scene {
         );
     }
 
-     draw_office(context, program_state, x, y, floor_count) {
+     draw_building(context, program_state, x, y, floor_count) {
         const blk = vec4(0, 0, 0, 1);
         let model_transform = Mat4.identity().times(Mat4.translation(x, y, -1));
 
@@ -769,6 +780,9 @@ export class SuperCity extends Scene {
         }
         for (let i = 0; i < this.houses.length; i++){
             this.draw_house(context, program_state, this.houses[i][0] * 4, this.houses[i][1] * 4, pink);
+        }
+        for (let i = 0; i < this.buildings.length; i++){
+            this.draw_building(context, program_state, this.buildings[i][0] * 4, this.houses[i][1] * 4, 5);
         }
         for (let i = 0; i < this.offices.length; i++){
             let temp = [this.offices[i][0], this.offices[i][1]];
