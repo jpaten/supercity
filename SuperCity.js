@@ -4,9 +4,18 @@ const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture
 } = tiny;
 
-const BASE_Z = -2
 const compare_coords = (a,b) => (a[0] === b[0]) && (a[1] === b[1])
 const GRAVITY = -0.002;
+const HOUSE_COLORS = [
+    hex_color("#309010"),
+    hex_color("#d52569"),
+    hex_color("#ca9ed3"),
+    hex_color("#fce2e2"),
+    hex_color("#9cd0ee"),
+    hex_color("#7b25d5"),
+    hex_color("#95c973"),
+
+]
 
 export class SuperCity extends Scene {
     constructor() {
@@ -48,9 +57,9 @@ export class SuperCity extends Scene {
             selected_square: new Material(new defs.Phong_Shader(),
                 {color: hex_color("#ff005b"), ambient: 0.5, specularity: 0, diffusivity: 0.5}),
             ground_texture: new Material(new defs.Textured_Phong(),
-                {color: hex_color("#101010"), texture: new Texture("./assets/ground.png"), ambient: 0.4, diffusivity: 1, specularity: 0.3}),
-            asteroid: new Material(new defs.Phong_Shader(),
-                {color: hex_color("#FF0000"), ambient: 0.3, diffusivity: 0.3, specularity: 0.}),
+                {color: hex_color("#101010"), texture: new Texture("./assets/ground.png"), ambient: 0.4, diffusivity: 1, specularity: 0.1}),
+            asteroid: new Material(new defs.Textured_Phong(),
+                {texture: new Texture("./assets/asteroid.png"),color: hex_color("#FFFFFF"), ambient: 0.3, diffusivity: 0.3, specularity: 0.}),
             office: new Material(new defs.Textured_Phong(),
                 {color: hex_color("#46444C"), ambient: 0.5, specularity: 0.5, diffusivity: 0.5}),
             window: new Material(new defs.Textured_Phong(),
@@ -63,7 +72,7 @@ export class SuperCity extends Scene {
         this.initial_camera_location = Mat4.look_at(vec3(0, -3, 5), vec3(0,0, 0), vec3(0, 1, 0));
         this.selection = [0,1];
         this.towers = [[2,2], [-1,-1]];
-        this.houses = [[1,3], [1,1]];
+        this.houses = [{"position": [1,3], color: HOUSE_COLORS[2]}, {"position": [1,1], color: HOUSE_COLORS[0]}];
         this.offices = [[1,2]];
         this.buildings = [[0,-1],[0,-3]];
         this.hazards = []
@@ -98,6 +107,7 @@ export class SuperCity extends Scene {
         this.superhero_velocity_x = 0;
         this.superhero_boost_time = 0;
         this.superhero_jump_time = 0;
+        this.superhero_bounce_time = 0;
         this.superhero_moving_forward = false;
         this.superhero_moving_backward = false;
 
@@ -120,10 +130,11 @@ export class SuperCity extends Scene {
             max_asteroids = num_buildings
         }
         console.log("max asteroids", num_buildings)
-        console.log(this.houses, this.buildings, this.offices, this.towers)
+        const house_positions = this.houses.map((x) => x.position)
+        console.log(house_positions, this.buildings, this.offices, this.towers)
         const num_asteroids = min_asteroids >= max_asteroids ? max_asteroids : (Math.floor(Math.random() * (max_asteroids - min_asteroids)) + min_asteroids);
         console.log("ASTEROIDS GENERATED", num_asteroids);
-        const possible_positions = this.offices.concat(this.houses.concat(this.towers))
+        const possible_positions = this.offices.concat(house_positions.concat(this.towers))
         const square_positions = []
         for(let i = 0; i < num_asteroids; i++) {
             let square_position = -1
@@ -160,11 +171,11 @@ export class SuperCity extends Scene {
     add_house(x,y) {
         console.log(x,y)
         for (let i = 0; i < this.houses.length; i++) {
-            if (compare_coords(this.houses[i], [x,y])) {
+            if (compare_coords(this.houses[i].position, [x,y])) {
                 return;
             }
         }
-        this.houses.push([x,y]);
+        this.houses.push({"position": [x,y], "color": HOUSE_COLORS[Math.floor(Math.random() * HOUSE_COLORS.length)]});
     }
     add_rectangular_tower(x, y) {
         console.log(x,y)
@@ -187,7 +198,7 @@ export class SuperCity extends Scene {
 
     remove(x,y) {
         this.towers = this.towers.filter((i) => (i[0] !== x) || (i[1] !== y));
-        this.houses = this.houses.filter((i) => (i[0] !== x) || (i[1] !== y));
+        this.houses = this.houses.filter((i) => (i.position[0] !== x) || (i.position[1] !== y));
         this.offices = this.offices.filter((i) => (i[0] !== x) || (i[1] !== y));
         this.buildings = this.buildings.filter((i) => (i[0] !== x) || (i[1] !== y))
         this.hazards = this.hazards.filter((i) => (i[0] !== x) || (i[1] !== y));
@@ -277,8 +288,8 @@ export class SuperCity extends Scene {
             this.superhero_accel_forward = 0;
             this.superhero_velocity_y = 0;
             this.superhero_accel_y = 0;
-            this.superhero_moving_forward = true;
-            this.superhero_panning = true;
+            this.superhero_moving_forward = false;
+            this.superhero_panning = false;
         } else {
             this.camera_x = this.desired_camera_x;
             this.camera_z = this.desired_camera_y;
@@ -311,6 +322,7 @@ export class SuperCity extends Scene {
             }
         }
     }
+
 
     building_collision () {
         let temp1 = Math.floor((this.camera_x+2)/4), temp2 = Math.floor((this.camera_y+2)/4);
@@ -358,8 +370,9 @@ export class SuperCity extends Scene {
                 else if((localX-2)^2 + (localY-2)^2  < 1.44 && this.camera_z >= 1.3 && this.camera_z < 4.25){
                     console.log("colliding with tower upper");
                     let tempR = Math.sqrt((localX-2)^2 + (localY-2)^2);
-                    this.camera_x += (1.35-tempR)*Math.cos(theta+Math.PI);
-                    this.camera_y += (1.35-tempR)*Math.sin(theta+Math.PI);
+                    this.superhero_bounce_time = 5;
+                    //this.camera_x += (1.35-tempR)*Math.cos(theta+Math.PI);
+                    //  this.camera_y += (1.35-tempR)*Math.sin(theta+Math.PI);
                     // this doesn't work very well
                     // (its trying to bounce the camera away from the tower each frame that the camera is inside the tower
                     // but the leap is constantly moving the camera forward?)
@@ -369,7 +382,7 @@ export class SuperCity extends Scene {
 
         }
         for(let i=0; i<this.houses.length; i++){
-            if(compare_coords(this.houses[i], gridCoords)){
+            if(compare_coords(this.houses[i].position, gridCoords)){
                 //collision for houses
                 console.log("house");
                 let localX = Math.abs((this.camera_x+2)%4);
@@ -483,6 +496,26 @@ export class SuperCity extends Scene {
 
             }
         }
+        // Edge of the world collision
+        if (this.camera_x > 60 || this.camera_x < -60 || this.camera_y > 60 || this.camera_y < -60) {
+            if (this.camera_x > 60) {
+                this.camera_x = 59.9;
+            } else if (this.camera_x < -60) {
+                this.camera_x = -59.9;
+            }
+            if (this.camera_y > 60) {
+                this.camera_y = 59.9;
+            } else if (this.camera_y < -60) {
+                this.camera_y = -59.9;
+            }
+
+            this.superhero_bounce_time = 5
+        }
+        if (this.camera_z > 55) {
+            this.superhero_accel_y = GRAVITY;
+            this.superhero_velocity_y = 0;
+            this.camera_z = 40
+        }
     }
 
     hazard_movement() {
@@ -502,7 +535,7 @@ export class SuperCity extends Scene {
                 break;
             }
 
-            const short_buildings = this.offices.concat(this.houses);
+            const short_buildings = this.offices.concat(this.houses.map((x) => x.position));
             for (let j = 0; j < short_buildings.length; j++) {
                 if (compare_coords(this.hazards[i].slice(0,2), short_buildings[j]) && this.hazards[i][2] < 2) {
                     this.remove(...short_buildings[j]);
@@ -546,7 +579,7 @@ export class SuperCity extends Scene {
         this.shapes.sphere.draw(
             context, program_state,
             Mat4.identity().times(Mat4.translation(x*4,y*4,z)).times(Mat4.scale(1.3,1.3,1.3)),
-            this.materials.asteroid.override(color)
+            this.materials.asteroid
         );
     }
 
@@ -907,7 +940,18 @@ export class SuperCity extends Scene {
                 this.superhero_accel_y += GRAVITY
                 this.superhero_jump_time = 0;
             }
-            // Collision detection
+            // Update acceleration based on bounce
+            if (this.superhero_bounce_time > 1) {
+                console.log("bouncing!")
+                this.superhero_velocity_forward = -0.03;
+                this.superhero_accel_forward = 0;
+                this.superhero_bounce_time--;
+            } else if (this.superhero_bounce_time === 1) {
+                this.superhero_velocity_forward = 0;
+                this.superhero_accel_forward = 0;
+                this.superhero_bounce_time--;
+            }
+            // Lower collision detection
             if (this.lower_collision().result) {
                 this.superhero_accel_y = 0;
                 this.superhero_velocity_y = 0;
@@ -961,10 +1005,9 @@ export class SuperCity extends Scene {
             this.superhero_roll_angle += this.superhero_roll_angular_velocity;
             this.superhero_tilt_angle += this.superhero_tilt_angular_velocity;
             this.superhero_pan_angle += this.superhero_pan_angular_velocity;
-            console.log(this.superhero_tilt_angle);
+            console.log("Moving forward?", this.superhero_moving_forward)
             console.log(this.camera_x, this.camera_z, this.camera_y);
             this.hazard_collision();
-
 
             if (this.superhero_tilt_angle > Math.PI ) {
                 this.superhero_tilt_angle = Math.PI;
@@ -1011,7 +1054,8 @@ export class SuperCity extends Scene {
             this.draw_tower(context, program_state, this.towers[i][0] * 4 ,this.towers[i][1] * 4);
         }
         for (let i = 0; i < this.houses.length; i++){
-            this.draw_house(context, program_state, this.houses[i][0] * 4, this.houses[i][1] * 4, pink);
+
+            this.draw_house(context, program_state, this.houses[i].position[0] * 4, this.houses[i].position[1] * 4, this.houses[i].color);
         }
         for (let i = 0; i < this.buildings.length; i++){
             this.draw_building(context, program_state, this.buildings[i][0] * 4, this.buildings[i][1] * 4, 5);
