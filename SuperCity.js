@@ -13,6 +13,7 @@ export class SuperCity extends Scene {
     constructor() {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
         super();
+        this.occupied_coordinates = [];
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
