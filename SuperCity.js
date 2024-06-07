@@ -55,7 +55,8 @@ export class SuperCity extends Scene {
                 {color: hex_color("#46444C"), ambient: 0.5, specularity: 0.5, diffusivity: 0.5}),
             window: new Material(new defs.Textured_Phong(),
                 {color: hex_color("#000000"),texture: new Texture("./assets/window.png"), ambient: 1}),
-
+            sky: new Material(new defs.Phong_Shader(),
+                {color: hex_color("#DDDDDD"), ambient: 0.6, diffusivity: 0, specularity: 0}),
 
         }
 
@@ -165,7 +166,7 @@ export class SuperCity extends Scene {
         }
         this.houses.push([x,y]);
     }
-     add_rectangular_tower(x, y) {
+    add_rectangular_tower(x, y) {
         console.log(x,y)
         for (let i = 0; i < this.buildings.length; i++) {
             if (compare_coords(this.buildings[i], [x,y])) {
@@ -311,6 +312,179 @@ export class SuperCity extends Scene {
         }
     }
 
+    building_collision () {
+        let temp1 = Math.floor((this.camera_x+2)/4), temp2 = Math.floor((this.camera_y+2)/4);
+
+        let gridCoords = [temp1, temp2];
+        console.log("Camera x: ", this.camera_x);
+        console.log("Camera y: ", this.camera_y);
+        console.log("Grid coords: ", gridCoords);
+        for(let i=0; i<this.towers.length; i++){
+            if(compare_coords(this.towers[i], gridCoords)){
+                console.log("tower");
+                let localX = Math.abs((this.camera_x+2)%4);
+                let localY = Math.abs((this.camera_y+2)%4);
+                if(this.camera_x < 0){
+                    localX = 4-localX;
+                }
+                if(this.camera_y < 0){
+                    localY = 4-localY;
+                }
+                let theta = Math.atan2(localY-2, localX-2);
+                console.log("localX:", localX, " localY", localY);
+                console.log("theta:", theta);
+
+                if(localX > 0.2 && localX < 3.8 && localY > 0.2 && localY < 3.8 && this.camera_z < 1.3){
+                    console.log("colliding with tower base");
+
+                    if(this.camera_z > 1){
+                        // if on the roof of the tower base, put on top
+                        // dont think this works
+                        this.camera_z = 1.1;
+                    }
+                    else if(theta >= -Math.PI/4 && theta < Math.PI/4){
+                        this.camera_x += (3.85-localX);
+                    }
+                    else if(theta >= Math.PI/4 && theta < 3*Math.PI/4){
+                        this.camera_y += (3.85-localY);
+                    }
+                    else if(theta >= 3*Math.PI/4 || theta < -3*Math.PI/4){
+                        this.camera_x -= (localX-.15);
+                    }
+                    else if(theta >= -3*Math.PI/4 && theta < -Math.PI/4){
+                        this.camera_y -= (localY-.15);
+                    }
+                }
+                else if((localX-2)^2 + (localY-2)^2  < 1.44 && this.camera_z >= 1.3 && this.camera_z < 4.25){
+                    console.log("colliding with tower upper");
+                    let tempR = Math.sqrt((localX-2)^2 + (localY-2)^2);
+                    this.camera_x += (1.35-tempR)*Math.cos(theta+Math.PI);
+                    this.camera_y += (1.35-tempR)*Math.sin(theta+Math.PI);
+                    // this doesn't work very well
+                    // (its trying to bounce the camera away from the tower each frame that the camera is inside the tower
+                    // but the leap is constantly moving the camera forward?)
+                }
+                return;
+            }
+
+        }
+        for(let i=0; i<this.houses.length; i++){
+            if(compare_coords(this.houses[i], gridCoords)){
+                //collision for houses
+                console.log("house");
+                let localX = Math.abs((this.camera_x+2)%4);
+                let localY = Math.abs((this.camera_y+2)%4);
+                if(this.camera_x < 0){
+                    localX = 4-localX;
+                }
+                if(this.camera_y < 0){
+                    localY = 4-localY;
+                }
+                let theta = Math.atan2(localY-2, localX-2);
+                console.log("localX:", localX, " localY", localY);
+                console.log("theta:", theta);
+
+                if(localX > .7 && localX < 3.3 && localY > 0.7 && localY < 3.3 && this.camera_z < 2.3){
+                    console.log("colliding with house");
+
+                    if(this.camera_z > 2){
+                        // if on the roof of the tower base, put on top
+                        // doubt this works
+                        this.camera_z = 2.3;
+                    }
+                    else if(theta >= -Math.PI/4 && theta < Math.PI/4){
+                        this.camera_x += (3.35-localX);
+                    }
+                    else if(theta >= Math.PI/4 && theta < 3*Math.PI/4){
+                        this.camera_y += (3.35-localY);
+                    }
+                    else if(theta >= 3*Math.PI/4 || theta < -3*Math.PI/4){
+                        this.camera_x -= (localX-.65);
+                    }
+                    else if(theta >= -3*Math.PI/4 && theta < -Math.PI/4){
+                        this.camera_y -= (localY-.65);
+                    }
+                }
+                return;
+            }
+        }
+        for(let i=0; i<this.offices.length; i++){
+            if(compare_coords(this.offices[i], gridCoords)){
+                //collision for offices
+                console.log("office");
+                let localX = Math.abs((this.camera_x+2)%4);
+                let localY = Math.abs((this.camera_y+2)%4);
+                if(this.camera_x < 0){
+                    localX = 4-localX;
+                }
+                if(this.camera_y < 0){
+                    localY = 4-localY;
+                }
+                let theta = Math.atan2(localY-2, localX-2);
+                console.log("localX:", localX, " localY", localY);
+                console.log("theta:", theta);
+
+                if(localX > .2 && localX < 3.8 && localY > 0.7 && localY < 3.3 && this.camera_z < 2.3){
+                    console.log("colliding with office");
+
+                    if(this.camera_z > 2){
+                        // if on the roof of the tower base, put on top
+                        // doubt this works
+                        this.camera_z = 2.3;
+                    }
+                    else if(theta >= -.588 && theta < .588){
+                        this.camera_x += (3.85-localX);
+                    }
+                    else if(theta >= .588 && theta < Math.PI-.588){
+                        this.camera_y += (3.35-localY);
+                    }
+                    else if(theta >= Math.PI-.588 || theta < -Math.PI+.588){
+                        this.camera_x -= (localX-.15);
+                    }
+                    else if(theta >= -Math.PI+588 && theta < -.588){
+                        this.camera_y -= (localY-.65);
+                    }
+                }
+                return;
+            }
+        }
+        for(let i=0; i<this.buildings.length; i++) {
+            if (compare_coords(this.buildings[i], gridCoords)) {
+                console.log("rectangular tower");
+                let localX = Math.abs((this.camera_x + 2) % 4);
+                let localY = Math.abs((this.camera_y + 2) % 4);
+                if (this.camera_x < 0) {
+                    localX = 4 - localX;
+                }
+                if (this.camera_y < 0) {
+                    localY = 4 - localY;
+                }
+                let theta = Math.atan2(localY - 2, localX - 2);
+                console.log("localX:", localX, " localY", localY);
+                console.log("theta:", theta);
+
+                if (localX > 0.2 && localX < 3.8 && localY > 0.2 && localY < 3.8 && this.camera_z < 5.1) {
+                    console.log("colliding with rectangular tower");
+
+                    if (this.camera_z > 4.8) {
+                        // if on the roof of the tower base, put on top
+                        // dont think this works
+                        this.camera_z = 5.1;
+                    } else if (theta >= -Math.PI / 4 && theta < Math.PI / 4) {
+                        this.camera_x += (3.85 - localX);
+                    } else if (theta >= Math.PI / 4 && theta < 3 * Math.PI / 4) {
+                        this.camera_y += (3.85 - localY);
+                    } else if (theta >= 3 * Math.PI / 4 || theta < -3 * Math.PI / 4) {
+                        this.camera_x -= (localX - .15);
+                    } else if (theta >= -3 * Math.PI / 4 && theta < -Math.PI / 4) {
+                        this.camera_y -= (localY - .15);
+                    }
+                }
+
+            }
+        }
+    }
+
     hazard_movement() {
         let i = 0
         const to_remove = [];
@@ -346,8 +520,8 @@ export class SuperCity extends Scene {
         this.key_triggered_button("Asteroids!", ["j"], () => this.add_hazards(3, 6, 7,10))
         this.new_line();
         this.key_triggered_button("Move up", ["ArrowUp"], this.move_up, undefined, this.move_up_release)
-            //() => this.desired_camera_y += (Math.abs(this.desired_camera_y - this.camera_y) < this.current_y_speed *10 ? this.step : 0));
-            //() => this.desired_camera_y += (Math.abs(this.desired_camera_y - this.camera_y)) < )
+        //() => this.desired_camera_y += (Math.abs(this.desired_camera_y - this.camera_y) < this.current_y_speed *10 ? this.step : 0));
+        //() => this.desired_camera_y += (Math.abs(this.desired_camera_y - this.camera_y)) < )
         this.key_triggered_button("Move down", ["ArrowDown"], this.move_down, undefined, this.move_down_release);
         this.new_line()
         this.key_triggered_button("Move left", ["ArrowLeft"], this.move_left, undefined, this.move_left_release);
@@ -376,7 +550,7 @@ export class SuperCity extends Scene {
         );
     }
 
-     draw_building(context, program_state, x, y, floor_count) {
+    draw_building(context, program_state, x, y, floor_count) {
         const blk = vec4(0, 0, 0, 1);
         let model_transform = Mat4.identity().times(Mat4.translation(x, y, -1));
 
@@ -457,92 +631,92 @@ export class SuperCity extends Scene {
 
     draw_house(context, program_state, x, y, color) {
 
-            let model_transform = Mat4.identity().times(Mat4.translation(x, y, -1));
-            this.shapes.cube.draw(context, program_state, model_transform, this.materials.house.override({color: color}));
+        let model_transform = Mat4.identity().times(Mat4.translation(x, y, -1));
+        this.shapes.cube.draw(context, program_state, model_transform, this.materials.house.override({color: color}));
 
-            const blk = vec4(0, 0, 0, 1);
-            const mixed_color = color.mix(blk, 0.5);
+        const blk = vec4(0, 0, 0, 1);
+        const mixed_color = color.mix(blk, 0.5);
 
-            // Draw the first slanted rectangle
-            let roof_transform = model_transform;
-            roof_transform = roof_transform.times(Mat4.translation(-0.53, 0.0, 1.47));  // Move to top of the cube
-            roof_transform = roof_transform.times(Mat4.rotation(Math.PI / 4, 0, -1, 0));  // Rotate to be slanted
-            roof_transform = roof_transform.times(Mat4.scale(0.75, 1, Math.sqrt(2) / 2));  // Scale to cover the top of the cube
-            this.shapes.square.draw(context, program_state, roof_transform, this.materials.house.override({color: mixed_color}));
+        // Draw the first slanted rectangle
+        let roof_transform = model_transform;
+        roof_transform = roof_transform.times(Mat4.translation(-0.53, 0.0, 1.47));  // Move to top of the cube
+        roof_transform = roof_transform.times(Mat4.rotation(Math.PI / 4, 0, -1, 0));  // Rotate to be slanted
+        roof_transform = roof_transform.times(Mat4.scale(0.75, 1, Math.sqrt(2) / 2));  // Scale to cover the top of the cube
+        this.shapes.square.draw(context, program_state, roof_transform, this.materials.house.override({color: mixed_color}));
 
-            // Draw the second slanted rectangle
-            roof_transform = model_transform;
-            roof_transform = roof_transform.times(Mat4.translation(0.53, 0.0, 1.47));  // Move to top of the cube
-            roof_transform = roof_transform.times(Mat4.rotation(-Math.PI / 4, 0, -1, 0));  // Rotate to be slanted
-            roof_transform = roof_transform.times(Mat4.scale(0.75, 1, Math.sqrt(2) / 2));  // Scale to cover the top of the cube
-            this.shapes.square.draw(context, program_state, roof_transform, this.materials.house.override({color: mixed_color}));
+        // Draw the second slanted rectangle
+        roof_transform = model_transform;
+        roof_transform = roof_transform.times(Mat4.translation(0.53, 0.0, 1.47));  // Move to top of the cube
+        roof_transform = roof_transform.times(Mat4.rotation(-Math.PI / 4, 0, -1, 0));  // Rotate to be slanted
+        roof_transform = roof_transform.times(Mat4.scale(0.75, 1, Math.sqrt(2) / 2));  // Scale to cover the top of the cube
+        this.shapes.square.draw(context, program_state, roof_transform, this.materials.house.override({color: mixed_color}));
 
-            // Draw the first triangle
-            let triangle_transform = model_transform;
-            triangle_transform = triangle_transform.times(Mat4.translation(0, 1, 2));  // Move to top of the cube
-            triangle_transform = triangle_transform.times(Mat4.rotation(Math.PI / 2, -1, 0, 0));  // Rotate to be perpendicular to the roof
-            triangle_transform = triangle_transform.times(Mat4.rotation(Math.PI / 4, 0, 0, 1));  // Rotate to be perpendicular to the roof
-            triangle_transform = triangle_transform.times(Mat4.scale(1.5, 1.5, 1.5));  // Scale to cover the triangular hole
-            this.shapes.triangle.draw(context, program_state, triangle_transform, this.materials.house.override({color: mixed_color}));
+        // Draw the first triangle
+        let triangle_transform = model_transform;
+        triangle_transform = triangle_transform.times(Mat4.translation(0, 1, 2));  // Move to top of the cube
+        triangle_transform = triangle_transform.times(Mat4.rotation(Math.PI / 2, -1, 0, 0));  // Rotate to be perpendicular to the roof
+        triangle_transform = triangle_transform.times(Mat4.rotation(Math.PI / 4, 0, 0, 1));  // Rotate to be perpendicular to the roof
+        triangle_transform = triangle_transform.times(Mat4.scale(1.5, 1.5, 1.5));  // Scale to cover the triangular hole
+        this.shapes.triangle.draw(context, program_state, triangle_transform, this.materials.house.override({color: mixed_color}));
 
-            // Draw the second triangle
-            triangle_transform = model_transform;
-            triangle_transform = triangle_transform.times(Mat4.translation(0, -1, 2));  // Move to top of the cube
-            triangle_transform = triangle_transform.times(Mat4.rotation(Math.PI / 2, -1, 0, 0));  // Rotate to be perpendicula
-            triangle_transform = triangle_transform.times(Mat4.rotation(Math.PI / 4, 0, 0, 1));  // Rotate to be perpendicular to the roof
-            triangle_transform = triangle_transform.times(Mat4.scale(1.5, 1.5, 1.5));  // Scale to cover the triangular hole
-            this.shapes.triangle.draw(context, program_state, triangle_transform, this.materials.house.override({color: mixed_color}));
+        // Draw the second triangle
+        triangle_transform = model_transform;
+        triangle_transform = triangle_transform.times(Mat4.translation(0, -1, 2));  // Move to top of the cube
+        triangle_transform = triangle_transform.times(Mat4.rotation(Math.PI / 2, -1, 0, 0));  // Rotate to be perpendicula
+        triangle_transform = triangle_transform.times(Mat4.rotation(Math.PI / 4, 0, 0, 1));  // Rotate to be perpendicular to the roof
+        triangle_transform = triangle_transform.times(Mat4.scale(1.5, 1.5, 1.5));  // Scale to cover the triangular hole
+        this.shapes.triangle.draw(context, program_state, triangle_transform, this.materials.house.override({color: mixed_color}));
 
-            //Draw door
-            let door_transform = model_transform;
-            door_transform = door_transform.times(Mat4.translation(0, -1.05, -0.3));
-            door_transform = door_transform.times(Mat4.scale(0.3, 0.3, 0.5));
-            door_transform = door_transform.times(Mat4.rotation(Math.PI / 2.0, -1, 0, 0));
-            this.shapes.square.draw(context, program_state, door_transform, this.materials.door)
+        //Draw door
+        let door_transform = model_transform;
+        door_transform = door_transform.times(Mat4.translation(0, -1.05, -0.3));
+        door_transform = door_transform.times(Mat4.scale(0.3, 0.3, 0.5));
+        door_transform = door_transform.times(Mat4.rotation(Math.PI / 2.0, -1, 0, 0));
+        this.shapes.square.draw(context, program_state, door_transform, this.materials.door)
 
-            //draw windows
+        //draw windows
 
-            //front face
-            let window_transform = model_transform.times(Mat4.translation(0.5, -1.01, 0.5));
-            window_transform = window_transform.times(Mat4.scale(0.15, 0.15, 0.15));
-            window_transform = window_transform.times(Mat4.rotation(Math.PI / 2.0, -1, 0, 0));
-            this.shapes.square.draw(context, program_state, window_transform, this.materials.window);
+        //front face
+        let window_transform = model_transform.times(Mat4.translation(0.5, -1.01, 0.5));
+        window_transform = window_transform.times(Mat4.scale(0.15, 0.15, 0.15));
+        window_transform = window_transform.times(Mat4.rotation(Math.PI / 2.0, -1, 0, 0));
+        this.shapes.square.draw(context, program_state, window_transform, this.materials.window);
 
-            window_transform = model_transform.times(Mat4.translation(-0.5, -1.01, 0.5));
-            window_transform = window_transform.times(Mat4.scale(0.15, 0.15, 0.15));
-            window_transform = window_transform.times(Mat4.rotation(Math.PI / 2.0, -1, 0, 0));
-            this.shapes.square.draw(context, program_state, window_transform, this.materials.window);
+        window_transform = model_transform.times(Mat4.translation(-0.5, -1.01, 0.5));
+        window_transform = window_transform.times(Mat4.scale(0.15, 0.15, 0.15));
+        window_transform = window_transform.times(Mat4.rotation(Math.PI / 2.0, -1, 0, 0));
+        this.shapes.square.draw(context, program_state, window_transform, this.materials.window);
 
-            //left side face
-            window_transform = model_transform.times(Mat4.translation(-1.01, -0.5, 0.5));
-            window_transform = window_transform.times(Mat4.scale(0.2, 0.2, 0.2));
-            window_transform = window_transform.times(Mat4.rotation(Math.PI / 2.0, -1, 0, 0));
-            window_transform = window_transform.times(Mat4.rotation(Math.PI / 2.0, 0, -1, 0));
-            this.shapes.square.draw(context, program_state, window_transform, this.materials.window);
+        //left side face
+        window_transform = model_transform.times(Mat4.translation(-1.01, -0.5, 0.5));
+        window_transform = window_transform.times(Mat4.scale(0.2, 0.2, 0.2));
+        window_transform = window_transform.times(Mat4.rotation(Math.PI / 2.0, -1, 0, 0));
+        window_transform = window_transform.times(Mat4.rotation(Math.PI / 2.0, 0, -1, 0));
+        this.shapes.square.draw(context, program_state, window_transform, this.materials.window);
 
-            window_transform = model_transform.times(Mat4.translation(-1.01, 0.5, 0.5));
-            window_transform = window_transform.times(Mat4.scale(0.2, 0.2, 0.2));
-            window_transform = window_transform.times(Mat4.rotation(Math.PI / 2.0, -1, 0, 0));
-            window_transform = window_transform.times(Mat4.rotation(Math.PI / 2.0, 0, -1, 0));
-            this.shapes.square.draw(context, program_state, window_transform, this.materials.window);
+        window_transform = model_transform.times(Mat4.translation(-1.01, 0.5, 0.5));
+        window_transform = window_transform.times(Mat4.scale(0.2, 0.2, 0.2));
+        window_transform = window_transform.times(Mat4.rotation(Math.PI / 2.0, -1, 0, 0));
+        window_transform = window_transform.times(Mat4.rotation(Math.PI / 2.0, 0, -1, 0));
+        this.shapes.square.draw(context, program_state, window_transform, this.materials.window);
 
-            //right side face
-            window_transform = model_transform.times(Mat4.translation(1.01, -0.5, 0.5));
-            window_transform = window_transform.times(Mat4.scale(0.2, 0.2, 0.2));
-            window_transform = window_transform.times(Mat4.rotation(Math.PI / 2.0, -1, 0, 0));
-            window_transform = window_transform.times(Mat4.rotation(Math.PI / 2.0, 0, -1, 0));
-            this.shapes.square.draw(context, program_state, window_transform, this.materials.window);
+        //right side face
+        window_transform = model_transform.times(Mat4.translation(1.01, -0.5, 0.5));
+        window_transform = window_transform.times(Mat4.scale(0.2, 0.2, 0.2));
+        window_transform = window_transform.times(Mat4.rotation(Math.PI / 2.0, -1, 0, 0));
+        window_transform = window_transform.times(Mat4.rotation(Math.PI / 2.0, 0, -1, 0));
+        this.shapes.square.draw(context, program_state, window_transform, this.materials.window);
 
-            window_transform = model_transform.times(Mat4.translation(1.01, 0.5, 0.5));
-            window_transform = window_transform.times(Mat4.scale(0.2, 0.2, 0.2));
-            window_transform = window_transform.times(Mat4.rotation(Math.PI / 2.0, -1, 0, 0));
-            window_transform = window_transform.times(Mat4.rotation(Math.PI / 2.0, 0, -1, 0));
-            this.shapes.square.draw(context, program_state, window_transform, this.materials.window);
-            let pair = [x,y]
-            this.occupied_coordinates.push(pair);
+        window_transform = model_transform.times(Mat4.translation(1.01, 0.5, 0.5));
+        window_transform = window_transform.times(Mat4.scale(0.2, 0.2, 0.2));
+        window_transform = window_transform.times(Mat4.rotation(Math.PI / 2.0, -1, 0, 0));
+        window_transform = window_transform.times(Mat4.rotation(Math.PI / 2.0, 0, -1, 0));
+        this.shapes.square.draw(context, program_state, window_transform, this.materials.window);
+        let pair = [x,y]
+        this.occupied_coordinates.push(pair);
 
     }
-       draw_ground(context, program_state, x, y) {
+    draw_ground(context, program_state, x, y) {
         const tile_size = 2; // Size of each ground tile
         const grid_size = 32; // 8x8 grid of tiles
 
@@ -608,22 +782,29 @@ export class SuperCity extends Scene {
     draw_lighting(context, program_state) {
         const t = program_state.animation_time / 1000;
         let daynight_length = 20;
-        let light_distance = 4;
+        let light_distance = 60;
         let sun_location = vec4(light_distance*Math.cos(Math.PI*t/daynight_length),0,light_distance*Math.sin(Math.PI*t/daynight_length),1.0);
         let moon_location = vec4(light_distance*Math.cos(Math.PI*t/daynight_length-Math.PI),0,light_distance*Math.sin(Math.PI*t/daynight_length-Math.PI),1.0);
         let sunlight_color = color(1,.75+.25*Math.sin(Math.PI*t/daynight_length), .5+.5*Math.sin(Math.PI*t/daynight_length), 1);
         let sun_color = color(1,.5+.5*Math.sin(Math.PI*t/daynight_length), 0, 1);
         let moonlight_color = color(1,1,1);
         let moon_color = hex_color("#FFFFD4");
-        //if(t % (daynight_length*2) <= daynight_length) {
+        let skyR = 0.59/2*Math.sin(Math.PI*t/daynight_length)+0.06+0.59/2;
+        let skyG = 0.6/2*Math.sin(Math.PI*t/daynight_length)+0.2+0.6/2;
+        let skyB = 0.5/2*Math.sin(Math.PI*t/daynight_length)+0.4+0.5/2;
+        let skyColor = color(skyR,skyG,skyB,1);
+        if(t % (daynight_length*2) <= daynight_length) {
             program_state.lights = [new Light(sun_location, sunlight_color, 100000)];
-            //this.shapes.sphere.draw(context, program_state, Mat4.translation(sun_location[0],sun_location[1],sun_location[2]),this.materials.sunMaterial.override({color: sun_color}));
-        //}
+            this.shapes.sphere.draw(context, program_state, Mat4.translation(sun_location[0],sun_location[1],sun_location[2]).times(Mat4.scale(3,3,3)),this.materials.sunMaterial.override({color: sun_color}));
+        }
         if(t % (daynight_length*2) > daynight_length) {
-            program_state.lights = [new Light(moon_location, moonlight_color, 10000)];
-            //this.shapes.sphere.draw(context, program_state, Mat4.translation(moon_location[0],moon_location[1],moon_location[2]),this.materials.sunMaterial.override({color: moon_color}));
+            program_state.lights = [new Light(moon_location, moonlight_color, 6000)];
+            this.shapes.sphere.draw(context, program_state, Mat4.translation(moon_location[0],moon_location[1],moon_location[2]),this.materials.sunMaterial.override({color: moon_color}));
 
         }
+        this.shapes.cylinder.draw(context, program_state,
+            Mat4.translation(0,0,-2).times(Mat4.rotation(Math.PI/2, 1,0,0)).times(Mat4.scale(64,64,128)),
+            this.materials.sky.override({color: skyColor}));
     }
 
 
@@ -703,7 +884,7 @@ export class SuperCity extends Scene {
             program_state.set_camera(desired_camera_matrix);
         } else {
             // In Superhero mode
-
+            this.building_collision();
             // Update acceleration based on boost
             if (this.superhero_boost_time > 90) {
                 this.superhero_accel_forward = 0.011 * Math.sin(this.superhero_tilt_angle);
