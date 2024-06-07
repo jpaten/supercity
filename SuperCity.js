@@ -7,7 +7,6 @@ const {
 const BASE_Z = -2
 const compare_coords = (a,b) => (a[0] === b[0]) && (a[1] === b[1])
 const GRAVITY = -0.002;
-const AIR_RESISTANCE = 0.001;
 
 export class SuperCity extends Scene {
     constructor() {
@@ -57,7 +56,7 @@ export class SuperCity extends Scene {
             window: new Material(new defs.Textured_Phong(),
                 {color: hex_color("#000000"),texture: new Texture("./assets/window.png"), ambient: 1}),
 
-   
+
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, -3, 5), vec3(0,0, 0), vec3(0, 1, 0));
@@ -102,16 +101,26 @@ export class SuperCity extends Scene {
         this.superhero_moving_backward = false;
 
         this.cd_cylinders = [];
-        this.cd_cubes = []
+        this.cd_cubes = [];
+
+        this.occupied_coordinates = [];
 
 
     }
 
-    add_hazards(min_asteroids, max_asteroids, max_height, min_height) {
+    add_hazards(min_asteroids, ideal_max_asteroids, max_height, min_height) {
         if (this.hazards.length > 0) {
             return;
         }
-        const num_asteroids = min_asteroids === max_asteroids ? min_asteroids : (Math.floor(Math.random() * (max_asteroids - min_asteroids)) + min_asteroids);
+        let max_asteroids = ideal_max_asteroids
+        const num_buildings = this.houses.length + this.buildings.length + this.offices.length + this.towers.length
+        if (ideal_max_asteroids > num_buildings) {
+            return;
+            max_asteroids = num_buildings
+        }
+        console.log("max asteroids", num_buildings)
+        console.log(this.houses, this.buildings, this.offices, this.towers)
+        const num_asteroids = min_asteroids >= max_asteroids ? max_asteroids : (Math.floor(Math.random() * (max_asteroids - min_asteroids)) + min_asteroids);
         console.log("ASTEROIDS GENERATED", num_asteroids);
         const possible_positions = this.offices.concat(this.houses.concat(this.towers))
         const square_positions = []
@@ -130,7 +139,15 @@ export class SuperCity extends Scene {
         console.log(square_positions)
     }
 
-    add_tower(x, y) {
+    add_random_tower(x, y) {
+        if (Math.random() <= 0.5) {
+            this.add_rectangular_tower(x, y);
+        } else {
+            this.add_cylinder_tower(x, y);
+        }
+    }
+
+    add_cylinder_tower(x, y) {
         for (let i = 0; i < this.towers.length; i++) {
             if (compare_coords(this.towers[i], [x,y])) {
                 return;
@@ -148,7 +165,7 @@ export class SuperCity extends Scene {
         }
         this.houses.push([x,y]);
     }
-     add_building(x,y) {
+     add_rectangular_tower(x, y) {
         console.log(x,y)
         for (let i = 0; i < this.buildings.length; i++) {
             if (compare_coords(this.buildings[i], [x,y])) {
@@ -193,12 +210,15 @@ export class SuperCity extends Scene {
         }
     }
     move_up_release () {
-        if (this.lower_collision().result) {
-            this.superhero_velocity_z = 0;
+        if (this.in_superhero_mode) {
+            if (this.lower_collision().result) {
+                this.superhero_velocity_z = 0;
+            } else {
+                this.superhero_tilt_angular_velocity = 0;
+            }
             this.superhero_moving_forward = false;
-        } else {
-            this.superhero_tilt_angular_velocity = 0;
         }
+
     }
     move_down () {
         if (this.in_superhero_mode) {
@@ -219,6 +239,7 @@ export class SuperCity extends Scene {
     move_right () {
         if (this.in_superhero_mode) {
             this.superhero_pan_angular_velocity = -Math.PI/70
+            this.superhero_panning = true;
         }
         else if (this.current_x_speed < 0 || Math.abs(this.desired_camera_x - this.camera_x) < this.current_x_speed*5) {
             this.desired_camera_x += this.step;
@@ -227,20 +248,20 @@ export class SuperCity extends Scene {
     move_right_release () {
         if (this.in_superhero_mode) {
             this.superhero_pan_angular_velocity = 0;
+            this.superhero_panning = false;
         }
     }
     move_left () {
         if (this.in_superhero_mode) {
             this.superhero_pan_angular_velocity = Math.PI/70
+            this.superhero_panning = true;
         }
         else if (this.current_x_speed > 0 || Math.abs(this.desired_camera_x - this.camera_x) < -this.current_x_speed * 5){
             this.desired_camera_x -= this.step
         }
     }
     move_left_release () {
-        if (this.in_superhero_mode) {
-            this.superhero_pan_angular_velocity = 0;
-        }
+        this.move_right_release();
     }
 
     toggle_superhero_mode () {
@@ -248,7 +269,15 @@ export class SuperCity extends Scene {
         if (this.in_superhero_mode) {
             this.camera_x = this.selection[0]*4;
             this.camera_z = this.selection[1]*4;
-            this.camera_y = 5;
+            this.camera_y = 4;
+            this.superhero_tilt_angular_velocity = 0;
+            this.superhero_pan_angular_velocity = 0;
+            this.superhero_velocity_forward = 0;
+            this.superhero_accel_forward = 0;
+            this.superhero_velocity_y = 0;
+            this.superhero_accel_y = 0;
+            this.superhero_moving_forward = true;
+            this.superhero_panning = true;
         } else {
             this.camera_x = this.desired_camera_x;
             this.camera_z = this.desired_camera_y;
@@ -267,7 +296,7 @@ export class SuperCity extends Scene {
     }
 
     lower_collision () {
-        return {"result": this.camera_z <= -1.7, "edge": -1.7};
+        return {"result": this.camera_z <= -1.6, "edge": -1.6};
     }
 
 
@@ -334,7 +363,7 @@ export class SuperCity extends Scene {
         this.new_line();
         this.key_triggered_button("Demolish", ["e"], () => this.remove(this.selection[0], this.selection[1]));
         this.new_line();
-        this.key_triggered_button("Build tower", ["t"], () => this.add_tower(this.selection[0], this.selection[1]));
+        this.key_triggered_button("Build tower", ["t"], () => this.add_random_tower(this.selection[0], this.selection[1]));
         this.key_triggered_button("Build house", ["h"], () => this.add_house(this.selection[0], this.selection[1]));
         this.key_triggered_button("Build office", ["o"], () => this.add_office(this.selection[0], this.selection[1]));
     }
@@ -713,7 +742,16 @@ export class SuperCity extends Scene {
                     this.superhero_accel_forward = 0;
                 }
                 console.log("boing")
-                this.superhero_tilt_angle = Math.PI/2;
+                if (Math.abs(this.superhero_tilt_angle - Math.PI / 2) < Math.PI/25) {
+                    this.superhero_tilt_angle = Math.PI/2
+                    this.superhero_tilt_angular_velocity = 0;
+                }
+                else if (Math.PI/2 < this.superhero_tilt_angle) {
+                    this.superhero_tilt_angular_velocity = -Math.PI/50
+                } else if (Math.PI/2 > this.superhero_tilt_angle) {
+                    this.superhero_tilt_angular_velocity = Math.PI/50;
+                }
+                //this.superhero_tilt_angle = Math.PI/2;
             } else {
                 console.log("wizz");
                 // Air Resistance
@@ -724,6 +762,9 @@ export class SuperCity extends Scene {
                         this.superhero_accel_forward = 0.01
                     }
                 }
+            }
+            if (! this.superhero_panning) {
+                this.superhero_pan_angular_velocity = 0;
             }
 
 
@@ -739,9 +780,17 @@ export class SuperCity extends Scene {
             this.superhero_roll_angle += this.superhero_roll_angular_velocity;
             this.superhero_tilt_angle += this.superhero_tilt_angular_velocity;
             this.superhero_pan_angle += this.superhero_pan_angular_velocity;
-            console.log(Math.cos(this.superhero_tilt_angle))
+            console.log(this.superhero_tilt_angle);
             console.log(this.camera_x, this.camera_z, this.camera_y);
             this.hazard_collision();
+
+
+            if (this.superhero_tilt_angle > Math.PI ) {
+                this.superhero_tilt_angle = Math.PI;
+            }
+            if (this.superhero_tilt_angle <  0) {
+                this.superhero_tilt_angle = 0;
+            }
 
             // Set camera matrix
             const desired_camera_matrix = Mat4.inverse(
@@ -774,7 +823,9 @@ export class SuperCity extends Scene {
 
 
         this.shapes.square.draw(context, program_state, Mat4.identity().times(Mat4.translation(0,0,-2)).times(Mat4.scale(20,20,20)), this.materials.planet1)
-        draw_selected_tile(this.selection)
+        if (!this.in_superhero_mode) {
+            draw_selected_tile(this.selection)
+        }
         for (let i = 0; i < this.towers.length; i++) {
             this.draw_tower(context, program_state, this.towers[i][0] * 4 ,this.towers[i][1] * 4);
         }
@@ -782,7 +833,7 @@ export class SuperCity extends Scene {
             this.draw_house(context, program_state, this.houses[i][0] * 4, this.houses[i][1] * 4, pink);
         }
         for (let i = 0; i < this.buildings.length; i++){
-            this.draw_building(context, program_state, this.buildings[i][0] * 4, this.houses[i][1] * 4, 5);
+            this.draw_building(context, program_state, this.buildings[i][0] * 4, this.buildings[i][1] * 4, 5);
         }
         for (let i = 0; i < this.offices.length; i++){
             let temp = [this.offices[i][0], this.offices[i][1]];
