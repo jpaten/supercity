@@ -530,7 +530,7 @@ export class SuperCity extends Scene {
         }
         this.shapes.cylinder.draw(
             context, program_state,
-            Mat4.identity().times(Mat4.translation(x,y,4.62)).times(Mat4.scale(1.2,1.2,0)),
+            Mat4.identity().times(Mat4.translation(x,y,4.26)).times(Mat4.scale(1.2,1.2,0)),
             this.materials.helipad_texture
         );
         this.shapes.cube.draw(
