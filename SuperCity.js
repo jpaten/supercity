@@ -38,8 +38,6 @@ export class SuperCity extends Scene {
 
         // *** Materials
         this.materials = {
-            planet1: new Material(new defs.Phong_Shader(),
-                {color: hex_color("#969696"), ambient: 0, specularity: 0, diffusivity: 1}),
             sunMaterial: new Material(new defs.Phong_Shader(),
                 {color: hex_color("#969696"), ambient: 1, specularity: 0, diffusivity: 0}),
             building1: new Material(new defs.Phong_Shader(),
@@ -1113,10 +1111,7 @@ export class SuperCity extends Scene {
         const pink = hex_color("#FFC0CB")
         //this.draw_house(context, program_state, 4,4, pink)
 
-        //this.shapes.axis.draw(context, program_state, Mat4.identity().times(Mat4.translation(0,0,5)), this.materials.planet1);
-
-
-        this.shapes.square.draw(context, program_state, Mat4.identity().times(Mat4.translation(0,0,-2)).times(Mat4.scale(20,20,20)), this.materials.planet1)
+        //this.shapes.square.draw(context, program_state, Mat4.identity().times(Mat4.translation(0,0,-2)).times(Mat4.scale(20,20,20)), this.materials.planet1)
         if (!this.in_superhero_mode) {
             draw_selected_tile(this.selection)
         }
