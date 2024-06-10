@@ -51,7 +51,7 @@ export class SuperCity extends Scene {
             tower_window: new Material(new defs.Phong_Shader(),
                 {color: hex_color("#DDDDDD"), ambient: .6, specularity: 0.1, diffusivity: 0.4}),
             helipad_texture: new Material(new defs.Textured_Phong(),
-                {color: hex_color("#000000"), texture: new Texture("./assets/helipad.png"), ambient: 0.2, specularity: 0.4}),
+                {color: hex_color("#000000"), texture: new Texture("./assets/helipad.png"), ambient: 0.2, diffusivity: 0.3, specularity: 0.4}),
             door: new Material(new defs.Textured_Phong(),
                 {color: hex_color("#000000"), texture: new Texture("./assets/door.png"), ambient:0.2}),
             selected_square: new Material(new defs.Phong_Shader(),
@@ -61,7 +61,7 @@ export class SuperCity extends Scene {
             asteroid: new Material(new defs.Textured_Phong(),
                 {texture: new Texture("./assets/asteroid.png"),color: hex_color("#FFFFFF"), ambient: 0.3, diffusivity: 0.3, specularity: 0.}),
             office: new Material(new defs.Textured_Phong(),
-                {color: hex_color("#46444C"), ambient: 0.5, specularity: 0.5, diffusivity: 0.5}),
+                {color: hex_color("#8c8b8f"), ambient: 0.2, specularity: 0.3, diffusivity: 0.5}),
             window: new Material(new defs.Textured_Phong(),
                 {color: hex_color("#000000"),texture: new Texture("./assets/window.png"), ambient: 1}),
             sky: new Material(new defs.Phong_Shader(),
@@ -78,15 +78,14 @@ export class SuperCity extends Scene {
         this.hazards = []
 
         this.desired_camera_x = 0
-        this.desired_camera_y = -5
-        this.desired_camera_z = 20;
+        this.desired_camera_z = -5
         this.base_speed = 0.2;
         this.current_z_speed = 0;
-        this.current_y_speed = this.base_speed;
-        this.current_x_speed = this.base_speed;
+        this.current_build_z_speed = this.base_speed;
+        this.current_x_build_speed = this.base_speed;
         this.camera_x = this.desired_camera_x;
-        this.camera_z = this.desired_camera_y;
-        this.camera_y = this.desired_camera_z;
+        this.camera_z = this.desired_camera_z;
+        this.camera_y = 20;
         this.step = 1;
 
         this.in_superhero_mode = false;
@@ -99,11 +98,11 @@ export class SuperCity extends Scene {
         this.superhero_accel_forward = 0;
         this.superhero_accel_up = 0;
         this.superhero_accel_z = 0;
-        this.superhero_accel_y = 0;
+        this.superhero_accel_z = 0;
         this.superhero_accel_x = 0;
         this.superhero_velocity_forward = 0;
         this.superhero_velocity_z = 0;
-        this.superhero_velocity_y = 0;
+        this.superhero_velocity_z = 0;
         this.superhero_velocity_x = 0;
         this.superhero_boost_time = 0;
         this.superhero_jump_time = 0;
@@ -217,8 +216,8 @@ export class SuperCity extends Scene {
                 this.superhero_tilt_angular_velocity = Math.PI / 70;
             }
         }
-        else if (this.current_y_speed < 0 || Math.abs(this.desired_camera_y - this.camera_z) < this.current_y_speed*5) {
-            this.desired_camera_y += this.step;
+        else if (this.current_build_z_speed < 0 || Math.abs(this.desired_camera_z - this.camera_z) < this.current_build_z_speed*5) {
+            this.desired_camera_z += this.step;
         }
     }
     move_up_release () {
@@ -241,8 +240,8 @@ export class SuperCity extends Scene {
                 this.superhero_tilt_angular_velocity = -Math.PI / 70;
             }
         }
-        else if (this.current_y_speed > 0 || Math.abs(this.desired_camera_y - this.camera_z) < -this.current_y_speed * 5){
-            this.desired_camera_y -= this.step
+        else if (this.current_build_z_speed > 0 || Math.abs(this.desired_camera_z - this.camera_z) < -this.current_build_z_speed * 5){
+            this.desired_camera_z -= this.step
         }
     }
     move_down_release () {
@@ -253,7 +252,7 @@ export class SuperCity extends Scene {
             this.superhero_pan_angular_velocity = -Math.PI/70
             this.superhero_panning = true;
         }
-        else if (this.current_x_speed < 0 || Math.abs(this.desired_camera_x - this.camera_x) < this.current_x_speed*5) {
+        else if (this.current_x_build_speed < 0 || Math.abs(this.desired_camera_x - this.camera_x) < this.current_x_build_speed*5) {
             this.desired_camera_x += this.step;
         }
     }
@@ -268,7 +267,7 @@ export class SuperCity extends Scene {
             this.superhero_pan_angular_velocity = Math.PI/70
             this.superhero_panning = true;
         }
-        else if (this.current_x_speed > 0 || Math.abs(this.desired_camera_x - this.camera_x) < -this.current_x_speed * 5){
+        else if (this.current_x_build_speed > 0 || Math.abs(this.desired_camera_x - this.camera_x) < -this.current_x_build_speed * 5){
             this.desired_camera_x -= this.step
         }
     }
@@ -280,20 +279,24 @@ export class SuperCity extends Scene {
         this.in_superhero_mode = ! this.in_superhero_mode;
         if (this.in_superhero_mode) {
             this.camera_x = this.selection[0]*4;
-            this.camera_z = this.selection[1]*4;
-            this.camera_y = 4;
+            this.camera_y = this.selection[1]*4;
+            if (this.camera_x > 50) {
+                this.camera_z = 2;
+            } else {
+                this.camera_z = 4;
+            }
             this.superhero_tilt_angular_velocity = 0;
             this.superhero_pan_angular_velocity = 0;
             this.superhero_velocity_forward = 0;
             this.superhero_accel_forward = 0;
-            this.superhero_velocity_y = 0;
-            this.superhero_accel_y = 0;
+            this.superhero_velocity_z = 0;
+            this.superhero_accel_z = 0;
             this.superhero_moving_forward = false;
             this.superhero_panning = false;
         } else {
             this.camera_x = this.desired_camera_x;
-            this.camera_z = this.desired_camera_y;
-            this.camera_y = this.desired_camera_z;
+            this.camera_y = 20  ;
+            this.camera_z = this.desired_camera_z;
         }
         console.log(this.in_superhero_mode);
     }
@@ -355,16 +358,41 @@ export class SuperCity extends Scene {
                         this.camera_z = 1.1;
                     }
                     else if(theta >= -Math.PI/4 && theta < Math.PI/4){
-                        this.camera_x += (3.85-localX);
+                        // this.superhero_velocity_forward = 0;
+                        // this.superhero_accel_forward = 0;
+                        if(! this.lower_collision().result) {
+                            this.superhero_bounce_time = 5;
+                        } else {
+                            this.camera_y += (3.85-localY);
+                        }
                     }
                     else if(theta >= Math.PI/4 && theta < 3*Math.PI/4){
-                        this.camera_y += (3.85-localY);
+                       // this.superhero_velocity_forward = 0;
+                       // this.superhero_accel_forward = 0;
+                       if(! this.lower_collision().result) {
+                            this.superhero_bounce_time = 5;
+                        } else {
+                           this.camera_y += (3.85-localY);
+                       }
                     }
                     else if(theta >= 3*Math.PI/4 || theta < -3*Math.PI/4){
-                        this.camera_x -= (localX-.15);
+                        // this.superhero_velocity_forward = 0;
+                        // this.superhero_accel_forward = 0;
+                        if(! this.lower_collision().result) {
+                            this.superhero_bounce_time = 5;
+                        } else {
+                            this.camera_y += (3.85-localY);
+                        }
                     }
                     else if(theta >= -3*Math.PI/4 && theta < -Math.PI/4){
-                        this.camera_y -= (localY-.15);
+                        this.camera_y += (3.85-localY);
+                        // this.superhero_velocity_forward = 0;
+                        // this.superhero_accel_forward = 0;
+                        if(! this.lower_collision().result) {
+                            this.superhero_bounce_time = 5;
+                        } else {
+                            this.camera_y += (3.85-localY);
+                        }
                     }
                 }
                 else if((localX-2)^2 + (localY-2)^2  < 1.44 && this.camera_z >= 1.3 && this.camera_z < 4.25){
@@ -406,16 +434,32 @@ export class SuperCity extends Scene {
                         this.camera_z = 2.3;
                     }
                     else if(theta >= -Math.PI/4 && theta < Math.PI/4){
-                        this.camera_x += (3.35-localX);
+                        if (this.lower_collision().result) {
+                            this.camera_x += (3.35 - localX);
+                        } else {
+                            this.superhero_bounce_time = 5;
+                        }
                     }
                     else if(theta >= Math.PI/4 && theta < 3*Math.PI/4){
-                        this.camera_y += (3.35-localY);
+                        if (this.lower_collision().result) {
+                            this.camera_y += (3.35 - localY);
+                        } else {
+                            this.superhero_bounce_time = 5;
+                        }
                     }
                     else if(theta >= 3*Math.PI/4 || theta < -3*Math.PI/4){
-                        this.camera_x -= (localX-.65);
+                        if (this.lower_collision().result) {
+                            this.camera_x -= (localX - .65);
+                        } else {
+                            this.superhero_bounce_time = 5;
+                        }
                     }
                     else if(theta >= -3*Math.PI/4 && theta < -Math.PI/4){
-                        this.camera_y -= (localY-.65);
+                        if (this.lower_collision().result) {
+                            this.camera_y -= (localY - .65);
+                        } else {
+                            this.superhero_bounce_time = 5;
+                        }
                     }
                 }
                 return;
@@ -446,16 +490,32 @@ export class SuperCity extends Scene {
                         this.camera_z = 2.3;
                     }
                     else if(theta >= -.588 && theta < .588){
-                        this.camera_x += (3.85-localX);
+                        if (this.lower_collision().result) {
+                            this.camera_x += (3.85 - localX);
+                        } else {
+                            this.superhero_bounce_time = 5;
+                        }
                     }
                     else if(theta >= .588 && theta < Math.PI-.588){
-                        this.camera_y += (3.35-localY);
+                        if (this.lower_collision().result) {
+                            this.camera_y += (3.35 - localY);
+                        } else {
+                            this.superhero_bounce_time = 5;
+                        }
                     }
                     else if(theta >= Math.PI-.588 || theta < -Math.PI+.588){
-                        this.camera_x -= (localX-.15);
+                        if (this.lower_collision().result) {
+                            this.camera_x -= (localX - .15);
+                        } else {
+                            this.superhero_bounce_time = 5;
+                        }
                     }
                     else if(theta >= -Math.PI+.588 && theta < -.588){
-                        this.camera_y -= (localY-.65);
+                        if (this.lower_collision().result) {
+                            this.camera_y -= (localY - .65);
+                        } else {
+                            this.superhero_bounce_time = 5;
+                        }
                     }
                 }
                 return;
@@ -484,13 +544,29 @@ export class SuperCity extends Scene {
                         // dont think this works
                         this.camera_z = 5.1;
                     } else if (theta >= -Math.PI / 4 && theta < Math.PI / 4) {
-                        this.camera_x += (3.85 - localX);
+                        if (this.lower_collision().result) {
+                            this.camera_x += (3.85 - localX);
+                        } else {
+                            this.superhero_bounce_time = 5;
+                        }
                     } else if (theta >= Math.PI / 4 && theta < 3 * Math.PI / 4) {
-                        this.camera_y += (3.85 - localY);
+                        if (this.lower_collision().result) {
+                            this.camera_y += (3.85 - localY);
+                        } else {
+                            this.superhero_bounce_time = 5;
+                        }
                     } else if (theta >= 3 * Math.PI / 4 || theta < -3 * Math.PI / 4) {
-                        this.camera_x -= (localX - .15);
+                        if (this.lower_collision()) {
+                            this.camera_x -= (localX - .15);
+                        } else {
+                            this.superhero_bounce_time = 5;
+                        }
                     } else if (theta >= -3 * Math.PI / 4 && theta < -Math.PI / 4) {
-                        this.camera_y -= (localY - .15);
+                        if (this.lower_collision()) {
+                            this.camera_y -= (localY - .15);
+                        } else {
+                            this.superhero_bounce_time = 5;
+                        }
                     }
                 }
 
@@ -512,8 +588,8 @@ export class SuperCity extends Scene {
             this.superhero_bounce_time = 5
         }
         if (this.camera_z > 55) {
-            this.superhero_accel_y = GRAVITY;
-            this.superhero_velocity_y = 0;
+            this.superhero_accel_z = GRAVITY;
+            this.superhero_velocity_z = 0;
             this.camera_z = 40
         }
     }
@@ -562,11 +638,11 @@ export class SuperCity extends Scene {
         //() => this.desired_camera_y += (Math.abs(this.desired_camera_y - this.camera_y)) < )
         this.key_triggered_button("Move right", ["ArrowRight"], this.move_right, undefined, this.move_right_release);
 
-        this.key_triggered_button("Select up", ["Alt", "ArrowUp"], () => this.selection[1]++);
-        this.key_triggered_button("Select down", ["Alt","ArrowDown"], () => this.selection[1]--);
+        this.key_triggered_button("Select up", ["Alt", "ArrowUp"], () => this.selection[1] < 13 ? this.selection[1]++ : true);
+        this.key_triggered_button("Select down", ["Alt","ArrowDown"], () => this.selection[1] > -13 ? this.selection[1]-- : true);
         this.new_line();
-        this.key_triggered_button("Select left", ["Alt", "ArrowLeft"], () => this.selection[0]--);
-        this.key_triggered_button("Select right", ["Alt", "ArrowRight"], () => this.selection[0]++);
+        this.key_triggered_button("Select left", ["Alt", "ArrowLeft"], () => this.selection[0] > -13 ? this.selection[0]-- : true);
+        this.key_triggered_button("Select right", ["Alt", "ArrowRight"], () => this.selection[0] < 13 ? this.selection[0]++ : true);
         this.new_line();
         this.key_triggered_button("Demolish", ["e"], () => this.remove(this.selection[0], this.selection[1]));
         this.new_line();
@@ -870,42 +946,42 @@ export class SuperCity extends Scene {
 
         if (! this.in_superhero_mode) {
             // Camera Control
-            if (this.camera_z < this.desired_camera_y) {
-                this.current_y_speed = Math.min(((this.desired_camera_y - this.camera_z) / 5), this.base_speed)
-                this.camera_z += this.current_y_speed
-                if (Math.abs(this.camera_z - this.desired_camera_y) < 0.001) {
-                    this.camera_z = this.desired_camera_y;
-                    this.current_y_speed = this.base_speed;
+            if (this.camera_z < this.desired_camera_z && this.desired_camera_z < 60) {
+                this.current_build_z_speed = Math.min(((this.desired_camera_z - this.camera_z) / 5), this.base_speed)
+                this.camera_z += this.current_build_z_speed
+                if (Math.abs(this.camera_z - this.desired_camera_z) < 0.001) {
+                    this.camera_z = this.desired_camera_z;
+                    this.current_build_z_speed = this.base_speed;
                 }
-            } else if (this.camera_z > this.desired_camera_y) {
-                console.log(this.desired_camera_y)
-                this.current_y_speed = Math.max(((this.desired_camera_y - this.camera_z) / 5), -this.base_speed)
-                this.camera_z += this.current_y_speed;
-                if (Math.abs(this.camera_z - this.desired_camera_y) < 0.001) {
-                    this.camera_z = this.desired_camera_y;
-                    this.current_y_speed = this.base_speed;
+            } else if (this.camera_z > this.desired_camera_z && this.desired_camera_z > -60) {
+                console.log(this.desired_camera_z)
+                this.current_build_z_speed = Math.max(((this.desired_camera_z - this.camera_z) / 5), -this.base_speed)
+                this.camera_z += this.current_build_z_speed;
+                if (Math.abs(this.camera_z - this.desired_camera_z) < 0.001) {
+                    this.camera_z = this.desired_camera_z;
+                    this.current_build_z_speed = this.base_speed;
                 }
             } else {
-                this.current_y_speed = this.base_speed;
+                this.current_build_z_speed = this.base_speed;
             }
             // Camera Control
-            if (this.camera_x < this.desired_camera_x) {
-                this.current_x_speed = Math.min(((this.desired_camera_x - this.camera_x) / 5), this.base_speed)
-                this.camera_x += this.current_x_speed
+            if (this.camera_x < this.desired_camera_x && this.desired_camera_x < 60) {
+                this.current_x_build_speed = Math.min(((this.desired_camera_x - this.camera_x) / 5), this.base_speed)
+                this.camera_x += this.current_x_build_speed
                 if (Math.abs(this.camera_x - this.desired_camera_x) < 0.001) {
                     this.camera_x = this.desired_camera_x;
-                    this.current_x_speed = this.base_speed;
+                    this.current_x_build_speed = this.base_speed;
                 }
-            } else if (this.camera_x > this.desired_camera_x) {
+            } else if (this.camera_x > this.desired_camera_x && this.desired_camera_x > -60) {
                 console.log(this.desired_camera_x)
-                this.current_x_speed = Math.max(((this.desired_camera_x - this.camera_x) / 5), -this.base_speed)
-                this.camera_x += this.current_x_speed;
+                this.current_x_build_speed = Math.max(((this.desired_camera_x - this.camera_x) / 5), -this.base_speed)
+                this.camera_x += this.current_x_build_speed;
                 if (Math.abs(this.camera_x - this.desired_camera_x) < 0.001) {
                     this.camera_x = this.desired_camera_x;
-                    this.current_x_speed = this.base_speed;
+                    this.current_x_build_speed = this.base_speed;
                 }
             } else {
-                this.current_x_speed = this.base_speed
+                this.current_x_build_speed = this.base_speed
             }
             const desired_camera_matrix = Mat4.inverse(
                 Mat4.identity().times(
@@ -921,23 +997,23 @@ export class SuperCity extends Scene {
             // Update acceleration based on boost
             if (this.superhero_boost_time > 90) {
                 this.superhero_accel_forward = 0.011 * Math.sin(this.superhero_tilt_angle);
-                this.superhero_accel_y = -0.011 * Math.cos(this.superhero_tilt_angle) + 0.01;
+                this.superhero_accel_z = -0.011 * Math.cos(this.superhero_tilt_angle) + 0.01;
                 this.superhero_boost_time--;
             } else if (this.superhero_boost_time < 90 && this.superhero_boost_time > 0) {
                 this.superhero_accel_forward -= 0.01/90;
                 this.superhero_boost_time--;
             } else {
                 this.superhero_accel_z = 0;
-                this.superhero_accel_y = 0;
+                this.superhero_accel_z = 0;
                 this.superhero_boost_time = 0;
             }
 
             // Update acceleration based on jump
             if (this.superhero_jump_time > 0) {
-                this.superhero_accel_y += 0.02;
+                this.superhero_accel_z += 0.02;
                 this.superhero_jump_time--;
             } else {
-                this.superhero_accel_y += GRAVITY
+                this.superhero_accel_z += GRAVITY
                 this.superhero_jump_time = 0;
             }
             // Update acceleration based on bounce
@@ -953,8 +1029,8 @@ export class SuperCity extends Scene {
             }
             // Lower collision detection
             if (this.lower_collision().result) {
-                this.superhero_accel_y = 0;
-                this.superhero_velocity_y = 0;
+                this.superhero_accel_z = 0;
+                this.superhero_velocity_z = 0;
                 this.camera_z = this.lower_collision().edge;
                 /*if (this.superhero_velocity_forward > 0.05 && ! this.superhero_moving_forward) {
                     this.superhero_accel_forward = -0.02;
@@ -995,12 +1071,12 @@ export class SuperCity extends Scene {
 
             // Update velocities based on accelerations
             //this.superhero_velocity_z += this.superhero_accel_forward * Math.sin(this.superhero_pan_angle);
-            this.superhero_velocity_y += this.superhero_accel_y;
+            this.superhero_velocity_z += this.superhero_accel_z;
             //this.superhero_velocity_x += this.superhero_accel_forward * Math.cos(this.superhero_pan_angle);
             this.superhero_velocity_forward += this.superhero_accel_forward;
             // Update camera position
             this.camera_y += this.superhero_velocity_forward * Math.cos(this.superhero_pan_angle);
-            this.camera_z += this.superhero_velocity_y;
+            this.camera_z += this.superhero_velocity_z;
             this.camera_x += -this.superhero_velocity_forward * Math.sin(this.superhero_pan_angle);
             this.superhero_roll_angle += this.superhero_roll_angular_velocity;
             this.superhero_tilt_angle += this.superhero_tilt_angular_velocity;
