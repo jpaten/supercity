@@ -885,8 +885,8 @@ export class SuperCity extends Scene {
         const t = program_state.animation_time / 1000;
         let daynight_length = 20;
         let light_distance = 60;
-        let sun_location = vec4(light_distance*Math.cos(Math.PI*t/daynight_length),0,light_distance*Math.sin(Math.PI*t/daynight_length),1.0);
-        let moon_location = vec4(light_distance*Math.cos(Math.PI*t/daynight_length-Math.PI),0,light_distance*Math.sin(Math.PI*t/daynight_length-Math.PI),1.0);
+        let sun_location = vec4((light_distance+5.5)*Math.cos(Math.PI*t/daynight_length),0,light_distance*Math.sin(Math.PI*t/daynight_length),1.0);
+        let moon_location = vec4((light_distance+4)*Math.cos(Math.PI*t/daynight_length-Math.PI),0,light_distance*Math.sin(Math.PI*t/daynight_length-Math.PI),1.0);
         let sunlight_color = color(1,.75+.25*Math.sin(Math.PI*t/daynight_length), .5+.5*Math.sin(Math.PI*t/daynight_length), 1);
         let sun_color = color(1,.5+.5*Math.sin(Math.PI*t/daynight_length), 0, 1);
         let moonlight_color = color(1,1,1);
@@ -897,17 +897,18 @@ export class SuperCity extends Scene {
         let skyColor = color(skyR,skyG,skyB,1);
         if(t % (daynight_length*2) <= daynight_length) {
             program_state.lights = [new Light(sun_location, sunlight_color, 100000)];
-            this.shapes.sphere.draw(context, program_state, Mat4.translation(sun_location[0],sun_location[1],sun_location[2]).times(Mat4.scale(3,3,3)),this.materials.sunMaterial.override({color: sun_color}));
         }
+        this.shapes.sphere.draw(context, program_state, Mat4.translation(sun_location[0],sun_location[1],sun_location[2]).times(Mat4.scale(3,3,3)),this.materials.sunMaterial.override({color: sun_color}));
         if(t % (daynight_length*2) > daynight_length) {
             program_state.lights = [new Light(moon_location, moonlight_color, 6000)];
-            this.shapes.sphere.draw(context, program_state, Mat4.translation(moon_location[0],moon_location[1],moon_location[2]),this.materials.sunMaterial.override({color: moon_color}));
-
         }
+        this.shapes.sphere.draw(context, program_state, Mat4.translation(moon_location[0],moon_location[1],moon_location[2]),this.materials.sunMaterial.override({color: moon_color}));
         this.shapes.cylinder.draw(context, program_state,
             Mat4.translation(0,0,-2).times(Mat4.rotation(Math.PI/2, 1,0,0)).times(Mat4.scale(64,64,128)),
             this.materials.sky.override({color: skyColor}));
     }
+
+
 
 
     display(context, program_state) {
