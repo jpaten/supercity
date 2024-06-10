@@ -91,24 +91,19 @@ export class SuperCity extends Scene {
         this.in_superhero_mode = false;
         this.superhero_tilt_angle = Math.PI/2;
         this.superhero_pan_angle = 0;
-        this.superhero_roll_angle = 0;
         this.superhero_tilt_angular_velocity = 0;
         this.superhero_pan_angular_velocity = 0;
         this.superhero_roll_angular_velocity = 0;
         this.superhero_accel_forward = 0;
-        this.superhero_accel_up = 0;
         this.superhero_accel_z = 0;
         this.superhero_accel_z = 0;
-        this.superhero_accel_x = 0;
         this.superhero_velocity_forward = 0;
         this.superhero_velocity_z = 0;
         this.superhero_velocity_z = 0;
-        this.superhero_velocity_x = 0;
         this.superhero_boost_time = 0;
         this.superhero_jump_time = 0;
         this.superhero_bounce_time = 0;
         this.superhero_moving_forward = false;
-        this.superhero_moving_backward = false;
 
         this.cd_cylinders = [];
         this.cd_cubes = [];
@@ -118,17 +113,15 @@ export class SuperCity extends Scene {
 
     }
 
-    add_hazards(min_asteroids, ideal_max_asteroids, max_height, min_height) {
+    add_hazards(min_asteroids, max_asteroids, max_height, min_height) {
         if (this.hazards.length > 0) {
             return;
         }
-        let max_asteroids = ideal_max_asteroids
         const num_buildings = this.houses.length + this.buildings.length + this.offices.length + this.towers.length
-        if (ideal_max_asteroids > num_buildings) {
+        if (max_asteroids > num_buildings) {
             return;
-            max_asteroids = num_buildings
         }
-        console.log("max asteroids", num_buildings)
+        console.log("eadgsg", max_asteroids, num_buildings)
         const house_positions = this.houses.map((x) => x.position)
         console.log(house_positions, this.buildings, this.offices, this.towers)
         const num_asteroids = min_asteroids >= max_asteroids ? max_asteroids : (Math.floor(Math.random() * (max_asteroids - min_asteroids)) + min_asteroids);
@@ -598,10 +591,10 @@ export class SuperCity extends Scene {
         let i = 0
         const to_remove = [];
         for (let i = 0; i < this.hazards.length; i++) {
-            this.hazards[i][2] -= 0.003;
+            this.hazards[i][2] -= 0.005;
             let removed = false;
             for (let j = 0; j < this.towers.length; j++) {
-                if (compare_coords(this.hazards[i].slice(0, 2), this.towers[j]) && this.hazards[i][2] < 4.75) {
+                if (compare_coords(this.hazards[i].slice(0, 2), this.towers[j]) && this.hazards[i][2] < 4.85) {
                     this.remove(...this.towers[j]);
                     removed = true;
                     break;
